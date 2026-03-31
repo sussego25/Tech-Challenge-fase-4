@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: sqs,sns
+      DEBUG: 1
+      DATA_DIR: /tmp/localstack/data
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  order-service:
+    build:
+      context: ../services/order-service
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_BROKER_URL: kafka:29092
+      SQS_ENDPOINT: http://localstack:4566
+    depends_on:
+      - kafka
+      - localstack
+
+  payment-service:
+    build:
+      context: ../services/payment-service
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_BROKER_URL: kafka:29092
+      SQS_ENDPOINT: http://localstack:4566
+    depends_on:
+      - kafka
+      - localstack
+
+  notification-service:
+    build:
+      context: ../services/notification-service
+    ports:
+      - "8082:8080"
+    environment:
+      KAFKA_BROKER_URL: kafka:29092
+      SQS_ENDPOINT: http://localstack:4566
+    depends_on:
+      - kafka
+      - localstack
