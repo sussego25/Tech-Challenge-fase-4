@@ -45,17 +45,17 @@ jobs:
         run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"  # Aplica as mudanças
 
       # Repita para outros módulos (ex.: DynamoDB)
-      - name: Terraform Init (DynamoDB)
-        working-directory: infra/dynamodb/terraform
-        run: terraform init
+    #   - name: Terraform Init (DynamoDB)
+    #     working-directory: infra/dynamodb/terraform
+    #     run: terraform init
 
-      - name: Terraform Plan (DynamoDB)
-        working-directory: infra/dynamodb/terraform
-        run: terraform plan -var="environment=${{ env.ENVIRONMENT }}"
+    #   - name: Terraform Plan (DynamoDB)
+    #     working-directory: infra/dynamodb/terraform
+    #     run: terraform plan -var="environment=${{ env.ENVIRONMENT }}"
 
-      - name: Terraform Apply (DynamoDB)
-        working-directory: infra/dynamodb/terraform
-        run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"
+    #   - name: Terraform Apply (DynamoDB)
+    #     working-directory: infra/dynamodb/terraform
+    #     run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"
 
       # Adicione mais módulos conforme necessário (ex.: EKS, VPC)
       # Exemplo para EKS:
