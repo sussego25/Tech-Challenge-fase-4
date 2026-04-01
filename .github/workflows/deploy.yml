@@ -33,37 +33,37 @@ jobs:
 
       # Módulo SQS (já configurado)
       - name: Terraform Init (SQS)
-        working-directory: infra/sqs/terraform
+        working-directory: tech-challenger/infra/sqs/terraform
         run: terraform init  # Inicializa o Terraform
 
       - name: Terraform Plan (SQS)
-        working-directory: infra/sqs/terraform
+        working-directory: tech-challenger/infra/sqs/terraform
         run: terraform plan -var="environment=${{ env.ENVIRONMENT }}"  # Mostra o que será criado/alterado
 
       - name: Terraform Apply (SQS)
-        working-directory: infra/sqs/terraform
+        working-directory: tech-challenger/infra/sqs/terraform
         run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"  # Aplica as mudanças
 
       # Repita para outros módulos (ex.: DynamoDB)
     #   - name: Terraform Init (DynamoDB)
-    #     working-directory: infra/dynamodb/terraform
+    #     working-directory: tech-challenger/infra/dynamodb/terraform
     #     run: terraform init
 
     #   - name: Terraform Plan (DynamoDB)
-    #     working-directory: infra/dynamodb/terraform
+    #     working-directory: tech-challenger/infra/dynamodb/terraform
     #     run: terraform plan -var="environment=${{ env.ENVIRONMENT }}"
 
     #   - name: Terraform Apply (DynamoDB)
-    #     working-directory: infra/dynamodb/terraform
+    #     working-directory: tech-challenger/infra/dynamodb/terraform
     #     run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"
 
       # Adicione mais módulos conforme necessário (ex.: EKS, VPC)
       # Exemplo para EKS:
       # - name: Terraform Init (EKS)
-      #   working-directory: infra/eks/terraform
+      #   working-directory: tech-challenger/infra/eks/terraform
       #   run: terraform init
       # - name: Terraform Apply (EKS)
-      #   working-directory: infra/eks/terraform
+      #   working-directory: tech-challenger/infra/eks/terraform
       #   run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"
 
   # Job 2: Deploy dos Serviços (Docker + Helm) - Comentado para testar só infra
