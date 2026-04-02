@@ -39,31 +39,3 @@ resource "aws_sqs_queue_redrive_policy" "architecture_analysis" {
     maxReceiveCount     = 3
   })
 }
-
-# SQS Queue - Notificações
-resource "aws_sqs_queue" "notification_queue" {
-  name                       = "${var.project_name}-notification-queue-${var.environment}"
-  delay_seconds              = 0
-  max_message_size           = 262144
-  message_retention_seconds  = 1209600  # 14 dias
-  visibility_timeout_seconds = 300     # 5 minutos
-
-  tags = var.common_tags
-}
-
-# Dead Letter Queue para notificações
-resource "aws_sqs_queue" "notification_dlq" {
-  name = "${var.project_name}-notification-dlq-${var.environment}"
-
-  tags = var.common_tags
-}
-
-# Redrive Policy para notificações
-resource "aws_sqs_queue_redrive_policy" "notification" {
-  queue_url = aws_sqs_queue.notification_queue.id
-
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.notification_dlq.arn
-    maxReceiveCount     = 3
-  })
-}

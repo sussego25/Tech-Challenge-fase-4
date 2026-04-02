@@ -31,17 +31,17 @@ jobs:
         with:
           terraform_version: "1.5.0"  # Versão do Terraform
 
-      # Módulo SQS (já configurado)
-      - name: Terraform Init (SQS)
-        working-directory: tech-challenger/infra/sqs/terraform
+      # Infra raiz: SQS + IAM por recurso
+      - name: Terraform Init (Infra Root)
+        working-directory: tech-challenger/infra/terraform
         run: terraform init  # Inicializa o Terraform
 
-      - name: Terraform Plan (SQS)
-        working-directory: tech-challenger/infra/sqs/terraform
+      - name: Terraform Plan (Infra Root)
+        working-directory: tech-challenger/infra/terraform
         run: terraform plan -var="environment=${{ env.ENVIRONMENT }}"  # Mostra o que será criado/alterado
 
-      - name: Terraform Apply (SQS)
-        working-directory: tech-challenger/infra/sqs/terraform
+      - name: Terraform Apply (Infra Root)
+        working-directory: tech-challenger/infra/terraform
         run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"  # Aplica as mudanças
 
       # Repita para outros módulos (ex.: DynamoDB)

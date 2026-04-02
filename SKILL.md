@@ -34,15 +34,16 @@ O fluxo se incia com uma requisição via API Gateway e grava em um bucket o dia
 - **DynamoDB**: Schemas NoSQL (infra/dynamodb/schemas/), queries otimizadas.
 - **S3**: Buckets para armazenamento de dados (infra/s3/).
 
-### 6. Integração com IA/LLM
-- **SageMaker**: Modelos de machine learning (infra/sagemaker/models/), handlers Lambda (services/lambda-functions/sagemaker-handler/).
-- **Prompts**: Configuração de prompts para LLM (infra/llm/prompts/).
+### 7. Segurança e IAM (Identity and Access Management)
+- **IAM Roles e Policies**: Controle de acesso granular aos recursos AWS.
+- **Trust Policies**: Define quem pode assumir uma role (ex: serviços como Lambda, EC2, ECS).
+- **IAM Policies**: Especifica permissões (ações permitidas/negadas em recursos específicos).
+- **Princípio de Menor Privilégio**: Cada recurso tem apenas as permissões necessárias.
+- **Estrutura no Projeto**:
+  - Cada recurso (Lambda, Worker, etc.) terá suas próprias roles correspondentes.
+  - Pasta dedicada para configuração de trust e policies dentro de cada módulo de infraestrutura.
+  - Arquivo `iam_role.tf` em cada pasta de recurso: especifica nome da role, trust policy e atribui a role ao recurso (ex: Lambda assume a role para acessar SQS).
 
-
-### 8. DevOps e CI/CD
-- **Pipelines**: GitHub Actions ou similares para builds, testes e deploys.
-- **Monitoramento**: Logs, métricas em Kubernetes/AWS.
-- **Segurança**: IAM roles, VPC, secrets management.
 
 ## Níveis de Proficiência
 - **Iniciante**: Conhecimento básico de uma linguagem e AWS.

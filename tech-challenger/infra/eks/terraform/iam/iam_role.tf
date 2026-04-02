@@ -1,0 +1,58 @@
+resource "aws_iam_role" "worker_service_role" {
+  name = "${var.project_name}-worker-service-role-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "AllowIRSAAssumeRole"
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Effect = "Allow"
+      Principal = {
+        Federated = var.eks_oidc_provider_arn
+      }
+      Condition = {
+        StringEquals = {
+          "${var.eks_oidc_provider_url}:sub" = "system:serviceaccount:${var.k8s_namespace}:${var.k8s_service_account_name}"
+          "${var.eks_oidc_provider_url}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+
+  tags = var.common_tags
+}
+
+resource "aws_iam_role_policy" "worker_sqs_policy" {
+  name = "${var.project_name}-worker-sqs-policy-${var.environment}"
+  role = aws_iam_role.worker_service_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowReceiveAndDeleteMessagesFromSQS"
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = var.sqs_queue_arn
+      },
+      {
+        Sid    = "AllowReceiveMessagesFromDLQ"
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = var.sqs_dlq_arn
+      }
+    ]
+  })
+}
+
+output "worker_service_role_arn" {
+  description = "ARN da role do worker service para IRSA"
+  value       = aws_iam_role.worker_service_role.arn
+}

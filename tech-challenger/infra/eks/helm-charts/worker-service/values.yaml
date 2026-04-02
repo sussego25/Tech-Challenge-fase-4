@@ -1,0 +1,53 @@
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/worker-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  name: "worker-service"
+  annotations:
+    eks.amazonaws.com/role-arn: ""
+
+env:
+  AWS_REGION: us-east-1
+  ENVIRONMENT: dev
+  SQS_QUEUE_URL: ""
+  KAFKA_BOOTSTRAP_SERVERS: ""
+
+existingSecretName: ""
+secretEnv: []
+# Exemplo:
+# secretEnv:
+#   - name: SMTP_PASSWORD
+#     key: smtp_password
+
+worker:
+  command: []
+  args: []
+  # Exemplo:
+  # command: ["python"]
+  # args: ["-m", "src.main"]
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
