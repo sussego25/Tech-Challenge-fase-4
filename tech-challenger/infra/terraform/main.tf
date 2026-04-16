@@ -51,6 +51,20 @@ module "lambda_iam" {
   common_tags                 = var.common_tags
 }
 
+module "lambda" {
+  source = "../lambda/terraform"
+
+  aws_region          = var.aws_region
+  environment         = var.environment
+  project_name        = var.project_name
+  common_tags         = var.common_tags
+  lambda_role_arn     = module.lambda_iam.lambda_documents_role_arn
+  s3_bucket_name      = module.s3.diagrams_bucket_name
+  sqs_queue_url       = module.sqs.architecture_analysis_queue_url
+  dynamodb_table_name = module.dynamodb.diagrams_table_name
+  log_retention_days  = var.lambda_log_retention_days
+}
+
 module "worker_iam" {
   count  = var.enable_worker_iam ? 1 : 0
   source = "../eks/terraform/iam"

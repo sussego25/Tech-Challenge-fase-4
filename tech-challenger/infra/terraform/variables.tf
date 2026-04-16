@@ -59,3 +59,9 @@ variable "s3_lifecycle_expiration_days" {
   type        = number
   default     = 90
 }
+
+variable "lambda_log_retention_days" {
+  description = "Dias de retencao dos logs da Lambda no CloudWatch"
+  type        = number
+  default     = 14
+}

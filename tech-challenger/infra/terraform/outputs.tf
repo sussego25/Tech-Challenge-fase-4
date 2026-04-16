@@ -57,3 +57,18 @@ output "diagrams_bucket_arn" {
   description = "ARN do bucket S3 de diagramas"
   value       = module.s3.diagrams_bucket_arn
 }
+
+output "lambda_function_name" {
+  description = "Nome da funcao Lambda order-handler"
+  value       = module.lambda.lambda_function_name
+}
+
+output "lambda_function_arn" {
+  description = "ARN da funcao Lambda order-handler"
+  value       = module.lambda.lambda_function_arn
+}
+
+output "lambda_invoke_arn" {
+  description = "ARN de invocacao da Lambda (usado pelo API Gateway)"
+  value       = module.lambda.lambda_invoke_arn
+}

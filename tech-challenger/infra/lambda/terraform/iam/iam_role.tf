@@ -71,6 +71,11 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+  role       = aws_iam_role.lambda_documents_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
 output "lambda_documents_role_arn" {
   description = "ARN da role da Lambda de documentos"
   value       = aws_iam_role.lambda_documents_role.arn
