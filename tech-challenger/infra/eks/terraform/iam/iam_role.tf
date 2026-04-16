@@ -56,3 +56,39 @@ output "worker_service_role_arn" {
   description = "ARN da role do worker service para IRSA"
   value       = aws_iam_role.worker_service_role.arn
 }
+
+resource "aws_iam_role_policy" "worker_dynamodb_policy" {
+  name = "${var.project_name}-worker-dynamodb-policy-${var.environment}"
+  role = aws_iam_role.worker_service_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "AllowDiagramsTableAccess"
+      Effect = "Allow"
+      Action = [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:UpdateItem"
+      ]
+      Resource = var.dynamodb_diagrams_table_arn
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "worker_s3_policy" {
+  name = "${var.project_name}-worker-s3-policy-${var.environment}"
+  role = aws_iam_role.worker_service_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "AllowDiagramsBucketReadAccess"
+      Effect = "Allow"
+      Action = [
+        "s3:GetObject"
+      ]
+      Resource = "${var.s3_diagrams_bucket_arn}/*"
+    }]
+  })
+}

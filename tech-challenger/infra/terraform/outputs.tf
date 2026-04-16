@@ -27,3 +27,33 @@ output "worker_service_role_arn" {
   description = "ARN da role IRSA do worker no EKS (null quando enable_worker_iam=false)"
   value       = try(module.worker_iam[0].worker_service_role_arn, null)
 }
+
+output "diagrams_table_name" {
+  description = "Nome da tabela DynamoDB de diagramas"
+  value       = module.dynamodb.diagrams_table_name
+}
+
+output "diagrams_table_arn" {
+  description = "ARN da tabela DynamoDB de diagramas"
+  value       = module.dynamodb.diagrams_table_arn
+}
+
+output "notifications_table_name" {
+  description = "Nome da tabela DynamoDB de notificacoes"
+  value       = module.dynamodb.notifications_table_name
+}
+
+output "notifications_table_arn" {
+  description = "ARN da tabela DynamoDB de notificacoes"
+  value       = module.dynamodb.notifications_table_arn
+}
+
+output "diagrams_bucket_name" {
+  description = "Nome do bucket S3 de diagramas"
+  value       = module.s3.diagrams_bucket_name
+}
+
+output "diagrams_bucket_arn" {
+  description = "ARN do bucket S3 de diagramas"
+  value       = module.s3.diagrams_bucket_arn
+}

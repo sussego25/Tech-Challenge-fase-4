@@ -53,3 +53,9 @@ variable "k8s_service_account_name" {
   type        = string
   default     = "worker-service"
 }
+
+variable "s3_lifecycle_expiration_days" {
+  description = "Dias para expirar objetos no bucket S3 de diagramas"
+  type        = number
+  default     = 90
+}
