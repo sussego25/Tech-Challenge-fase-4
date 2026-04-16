@@ -113,3 +113,31 @@ output "sagemaker_execution_role_arn" {
   description = "ARN da execution role do SageMaker (null quando enable_sagemaker=false)"
   value       = try(module.sagemaker[0].sagemaker_execution_role_arn, null)
 }
+
+# ─────────────────────────────────────────────
+# Kafka (MSK)
+# ─────────────────────────────────────────────
+output "kafka_bootstrap_brokers_tls" {
+  description = "Endpoints TLS dos brokers MSK para os servicos no EKS (null quando enable_kafka=false)"
+  value       = try(module.kafka[0].bootstrap_brokers_tls, null)
+}
+
+output "kafka_bootstrap_brokers" {
+  description = "Endpoints PLAINTEXT dos brokers MSK (null quando enable_kafka=false)"
+  value       = try(module.kafka[0].bootstrap_brokers, null)
+}
+
+output "kafka_cluster_arn" {
+  description = "ARN do cluster MSK (null quando enable_kafka=false)"
+  value       = try(module.kafka[0].cluster_arn, null)
+}
+
+output "kafka_cluster_name" {
+  description = "Nome do cluster MSK (null quando enable_kafka=false)"
+  value       = try(module.kafka[0].cluster_name, null)
+}
+
+output "kafka_security_group_id" {
+  description = "ID do security group do cluster MSK (null quando enable_kafka=false)"
+  value       = try(module.kafka[0].security_group_id, null)
+}
