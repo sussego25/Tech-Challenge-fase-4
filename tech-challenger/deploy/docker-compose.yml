@@ -59,14 +59,36 @@ services:
       - kafka
       - localstack
 
+  worker-service:
+    build:
+      context: ..
+      dockerfile: services/worker-service/Dockerfile
+    environment:
+      SQS_QUEUE_URL: http://localstack:4566/000000000000/tech-challenger-analysis-dev
+      S3_BUCKET: tech-challenger-diagrams-dev-000000000000
+      DYNAMODB_TABLE: tech-challenger-diagrams-dev
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC_ANALYSIS_COMPLETED: analysis-completed
+      SAGEMAKER_ENDPOINT: ""
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    depends_on:
+      - kafka
+      - localstack
+
   notification-service:
     build:
-      context: ../services/notification-service
-    ports:
-      - "8082:8080"
+      context: ..
+      dockerfile: services/notification-service/Dockerfile
     environment:
-      KAFKA_BROKER_URL: kafka:29092
-      SQS_ENDPOINT: http://localstack:4566
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC_ANALYSIS_COMPLETED: analysis-completed
+      KAFKA_GROUP_ID: notification-service
+      DYNAMODB_TABLE: tech-challenger-notifications-dev
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
     depends_on:
       - kafka
       - localstack
