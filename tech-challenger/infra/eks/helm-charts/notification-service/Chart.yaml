@@ -1,0 +1,6 @@
+apiVersion: v2
+name: notification-service
+description: Helm chart para o notification-service no EKS (consome Kafka, persiste notificacoes no DynamoDB)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
