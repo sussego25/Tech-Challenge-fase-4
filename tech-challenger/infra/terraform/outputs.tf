@@ -72,3 +72,44 @@ output "lambda_invoke_arn" {
   description = "ARN de invocacao da Lambda (usado pelo API Gateway)"
   value       = module.lambda.lambda_invoke_arn
 }
+
+# ─────────────────────────────────────────────
+# EKS
+# ─────────────────────────────────────────────
+output "eks_cluster_name" {
+  description = "Nome do cluster EKS (null quando enable_eks=false)"
+  value       = try(module.eks[0].cluster_name, null)
+}
+
+output "eks_cluster_endpoint" {
+  description = "Endpoint do cluster EKS (null quando enable_eks=false)"
+  value       = try(module.eks[0].cluster_endpoint, null)
+}
+
+output "eks_oidc_provider_arn" {
+  description = "ARN do OIDC provider do EKS para IRSA (null quando enable_eks=false)"
+  value       = try(module.eks[0].oidc_provider_arn, null)
+}
+
+output "eks_oidc_provider_url" {
+  description = "URL do OIDC provider do EKS para IRSA (null quando enable_eks=false)"
+  value       = try(module.eks[0].oidc_provider_url, null)
+}
+
+# ─────────────────────────────────────────────
+# SageMaker
+# ─────────────────────────────────────────────
+output "sagemaker_endpoint_name" {
+  description = "Nome do endpoint SageMaker LLM (null quando enable_sagemaker=false)"
+  value       = try(module.sagemaker[0].endpoint_name, null)
+}
+
+output "sagemaker_endpoint_arn" {
+  description = "ARN do endpoint SageMaker LLM (null quando enable_sagemaker=false)"
+  value       = try(module.sagemaker[0].endpoint_arn, null)
+}
+
+output "sagemaker_execution_role_arn" {
+  description = "ARN da execution role do SageMaker (null quando enable_sagemaker=false)"
+  value       = try(module.sagemaker[0].sagemaker_execution_role_arn, null)
+}

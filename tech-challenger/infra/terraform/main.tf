@@ -5,6 +5,14 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
 }
 
@@ -69,8 +77,11 @@ module "worker_iam" {
   count  = var.enable_worker_iam ? 1 : 0
   source = "../eks/terraform/iam"
 
-  environment                 = var.environment
-  project_name                = var.project_name
+  environment  = var.environment
+  project_name = var.project_name
+  # Quando enable_eks=true, popule automaticamente com os outputs do modulo eks:
+  # eks_oidc_provider_arn  = var.enable_eks ? module.eks[0].oidc_provider_arn : var.eks_oidc_provider_arn
+  # eks_oidc_provider_url  = var.enable_eks ? replace(module.eks[0].oidc_provider_url, "https://", "") : replace(var.eks_oidc_provider_url, "https://", "")
   eks_oidc_provider_arn       = var.eks_oidc_provider_arn
   eks_oidc_provider_url       = replace(var.eks_oidc_provider_url, "https://", "")
   k8s_namespace               = var.k8s_namespace
@@ -80,4 +91,36 @@ module "worker_iam" {
   dynamodb_diagrams_table_arn = module.dynamodb.diagrams_table_arn
   s3_diagrams_bucket_arn      = module.s3.diagrams_bucket_arn
   common_tags                 = var.common_tags
+}
+
+module "eks" {
+  count  = var.enable_eks ? 1 : 0
+  source = "../eks/terraform"
+
+  aws_region         = var.aws_region
+  environment        = var.environment
+  project_name       = var.project_name
+  common_tags        = var.common_tags
+  cluster_version    = var.eks_cluster_version
+  vpc_id             = var.eks_vpc_id
+  subnet_ids         = var.eks_subnet_ids
+  node_instance_type = var.eks_node_instance_type
+  node_desired_size  = var.eks_node_desired_size
+  node_min_size      = var.eks_node_min_size
+  node_max_size      = var.eks_node_max_size
+}
+
+module "sagemaker" {
+  count  = var.enable_sagemaker ? 1 : 0
+  source = "../sagemaker/terraform"
+
+  aws_region             = var.aws_region
+  environment            = var.environment
+  project_name           = var.project_name
+  common_tags            = var.common_tags
+  s3_diagrams_bucket_arn = module.s3.diagrams_bucket_arn
+  model_container_image  = var.sagemaker_model_container_image
+  hf_model_id            = var.sagemaker_hf_model_id
+  instance_type          = var.sagemaker_instance_type
+  instance_count         = var.sagemaker_instance_count
 }

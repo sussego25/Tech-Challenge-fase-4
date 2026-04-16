@@ -65,3 +65,87 @@ variable "lambda_log_retention_days" {
   type        = number
   default     = 14
 }
+
+# ─────────────────────────────────────────────
+# EKS Cluster
+# ─────────────────────────────────────────────
+variable "enable_eks" {
+  description = "Habilita criacao do cluster EKS"
+  type        = bool
+  default     = false
+}
+
+variable "eks_cluster_version" {
+  description = "Versao do Kubernetes para o cluster EKS"
+  type        = string
+  default     = "1.29"
+}
+
+variable "eks_vpc_id" {
+  description = "ID da VPC para o cluster EKS (obrigatorio quando enable_eks=true)"
+  type        = string
+  default     = ""
+}
+
+variable "eks_subnet_ids" {
+  description = "IDs das subnets para o cluster EKS (minimo 2 AZs)"
+  type        = list(string)
+  default     = []
+}
+
+variable "eks_node_instance_type" {
+  description = "Tipo de instancia EC2 para os nodes do EKS"
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "eks_node_desired_size" {
+  description = "Numero desejado de nodes"
+  type        = number
+  default     = 2
+}
+
+variable "eks_node_min_size" {
+  description = "Numero minimo de nodes"
+  type        = number
+  default     = 1
+}
+
+variable "eks_node_max_size" {
+  description = "Numero maximo de nodes"
+  type        = number
+  default     = 4
+}
+
+# ─────────────────────────────────────────────
+# SageMaker
+# ─────────────────────────────────────────────
+variable "enable_sagemaker" {
+  description = "Habilita criacao do endpoint SageMaker LLM"
+  type        = bool
+  default     = false
+}
+
+variable "sagemaker_model_container_image" {
+  description = "URI da imagem de container do modelo LLM no ECR"
+  type        = string
+  default     = ""
+}
+
+variable "sagemaker_hf_model_id" {
+  description = "HuggingFace model ID para o endpoint SageMaker"
+  type        = string
+  default     = "mistralai/Mistral-7B-Instruct-v0.2"
+}
+
+variable "sagemaker_instance_type" {
+  description = "Tipo de instancia SageMaker (GPU recomendado)"
+  type        = string
+  default     = "ml.g4dn.xlarge"
+}
+
+variable "sagemaker_instance_count" {
+  description = "Numero de instancias no endpoint SageMaker"
+  type        = number
+  default     = 1
+}
