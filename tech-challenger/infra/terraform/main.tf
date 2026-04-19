@@ -62,7 +62,6 @@ module "lambda_iam" {
 module "lambda" {
   source = "../lambda/terraform"
 
-  aws_region          = var.aws_region
   environment         = var.environment
   project_name        = var.project_name
   common_tags         = var.common_tags

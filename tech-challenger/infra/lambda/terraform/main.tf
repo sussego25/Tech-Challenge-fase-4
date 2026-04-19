@@ -39,7 +39,6 @@ resource "aws_lambda_function" "order_handler" {
       S3_BUCKET      = var.s3_bucket_name
       SQS_QUEUE_URL  = var.sqs_queue_url
       DYNAMODB_TABLE = var.dynamodb_table_name
-      AWS_REGION     = var.aws_region
     }
   }
 
