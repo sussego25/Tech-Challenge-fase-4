@@ -36,9 +36,9 @@ variable "kafka_version" {
 }
 
 variable "broker_instance_type" {
-  description = "Tipo de instancia para os brokers MSK"
+  description = "Tipo de instancia para os brokers MSK (kafka.t3.small para dev)"
   type        = string
-  default     = "kafka.m5.large"
+  default     = "kafka.t3.small"
 }
 
 variable "number_of_broker_nodes" {
@@ -50,7 +50,7 @@ variable "number_of_broker_nodes" {
 variable "broker_volume_size" {
   description = "Tamanho do volume EBS de cada broker em GB"
   type        = number
-  default     = 100
+  default     = 10
 }
 
 variable "allowed_cidr_blocks" {

@@ -60,11 +60,7 @@ variable "s3_lifecycle_expiration_days" {
   default     = 90
 }
 
-variable "lambda_log_retention_days" {
-  description = "Dias de retencao dos logs da Lambda no CloudWatch"
-  type        = number
-  default     = 14
-}
+
 
 # ─────────────────────────────────────────────
 # Networking (VPC)
@@ -115,15 +111,15 @@ variable "eks_subnet_ids" {
 }
 
 variable "eks_node_instance_type" {
-  description = "Tipo de instancia EC2 para os nodes do EKS"
+  description = "Tipo de instancia EC2 para os nodes do EKS (t3.small para dev)"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.small"
 }
 
 variable "eks_node_desired_size" {
   description = "Numero desejado de nodes"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "eks_node_min_size" {
@@ -135,7 +131,7 @@ variable "eks_node_min_size" {
 variable "eks_node_max_size" {
   description = "Numero maximo de nodes"
   type        = number
-  default     = 4
+  default     = 2
 }
 
 # ─────────────────────────────────────────────
@@ -160,9 +156,9 @@ variable "sagemaker_hf_model_id" {
 }
 
 variable "sagemaker_instance_type" {
-  description = "Tipo de instancia SageMaker (GPU recomendado)"
+  description = "Tipo de instancia SageMaker (ml.m5.large para dev, GPU para prod)"
   type        = string
-  default     = "ml.g4dn.xlarge"
+  default     = "ml.m5.large"
 }
 
 variable "sagemaker_instance_count" {
@@ -199,9 +195,9 @@ variable "kafka_version" {
 }
 
 variable "kafka_broker_instance_type" {
-  description = "Tipo de instancia para os brokers MSK"
+  description = "Tipo de instancia para os brokers MSK (kafka.t3.small para dev)"
   type        = string
-  default     = "kafka.m5.large"
+  default     = "kafka.t3.small"
 }
 
 variable "kafka_number_of_broker_nodes" {
@@ -213,7 +209,7 @@ variable "kafka_number_of_broker_nodes" {
 variable "kafka_broker_volume_size" {
   description = "Tamanho do volume EBS de cada broker MSK em GB"
   type        = number
-  default     = 100
+  default     = 10
 }
 
 variable "kafka_allowed_cidr_blocks" {

@@ -37,9 +37,9 @@ variable "hf_model_id" {
 }
 
 variable "instance_type" {
-  description = "Tipo de instancia SageMaker para o endpoint (GPU recomendado)"
+  description = "Tipo de instancia SageMaker para o endpoint (ml.m5.large para dev, GPU para prod)"
   type        = string
-  default     = "ml.g4dn.xlarge"
+  default     = "ml.m5.large"
 }
 
 variable "instance_count" {

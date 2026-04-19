@@ -70,7 +70,6 @@ module "lambda" {
   s3_bucket_name      = module.s3.diagrams_bucket_name
   sqs_queue_url       = module.sqs.architecture_analysis_queue_url
   dynamodb_table_name = module.dynamodb.diagrams_table_name
-  log_retention_days  = var.lambda_log_retention_days
 }
 
 module "worker_iam" {

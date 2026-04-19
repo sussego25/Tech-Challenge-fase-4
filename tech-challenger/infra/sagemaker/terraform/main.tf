@@ -63,7 +63,6 @@ resource "aws_sagemaker_model" "llm" {
       HF_TASK          = "text-generation"
       MAX_INPUT_LENGTH = "4096"
       MAX_TOTAL_TOKENS = "8192"
-      SM_NUM_GPUS      = "1"
     }
   }
 

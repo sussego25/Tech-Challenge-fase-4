@@ -41,8 +41,4 @@ variable "dynamodb_table_name" {
   type        = string
 }
 
-variable "log_retention_days" {
-  description = "Dias de retencao dos logs do CloudWatch para a Lambda"
-  type        = number
-  default     = 14
-}
+

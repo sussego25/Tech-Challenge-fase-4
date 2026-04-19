@@ -19,20 +19,6 @@ data "archive_file" "order_handler" {
 }
 
 # -------------------------------------------------------------------
-# CloudWatch Log Group — criado antes da funcao para evitar race condition
-# -------------------------------------------------------------------
-resource "aws_cloudwatch_log_group" "order_handler" {
-  name              = "/aws/lambda/${local.function_name}"
-  retention_in_days = var.log_retention_days
-
-  tags = merge(var.common_tags, {
-    Name        = "/aws/lambda/${local.function_name}"
-    Environment = var.environment
-    Module      = "lambda"
-  })
-}
-
-# -------------------------------------------------------------------
 # Lambda Function
 # -------------------------------------------------------------------
 resource "aws_lambda_function" "order_handler" {
@@ -62,6 +48,4 @@ resource "aws_lambda_function" "order_handler" {
     Environment = var.environment
     Module      = "lambda"
   })
-
-  depends_on = [aws_cloudwatch_log_group.order_handler]
 }

@@ -116,24 +116,5 @@ resource "aws_msk_cluster" "main" {
     }
   }
 
-  logging_info {
-    broker_logs {
-      cloudwatch_logs {
-        enabled   = true
-        log_group = "/aws/msk/${var.project_name}-${var.environment}"
-      }
-    }
-  }
-
-  tags = var.common_tags
-}
-
-# ─────────────────────────────────────────────
-# CloudWatch Log Group para os brokers
-# ─────────────────────────────────────────────
-resource "aws_cloudwatch_log_group" "msk" {
-  name              = "/aws/msk/${var.project_name}-${var.environment}"
-  retention_in_days = 7
-
   tags = var.common_tags
 }
