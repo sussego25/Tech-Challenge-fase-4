@@ -67,6 +67,27 @@ variable "lambda_log_retention_days" {
 }
 
 # ─────────────────────────────────────────────
+# Networking (VPC)
+# ─────────────────────────────────────────────
+variable "enable_networking" {
+  description = "Habilita criacao da VPC e subnets pelo modulo networking"
+  type        = bool
+  default     = false
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block da VPC (usado quando enable_networking=true)"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "enable_ha_nat" {
+  description = "Habilita HA NAT Gateway (um por AZ). Recomendado para producao."
+  type        = bool
+  default     = false
+}
+
+# ─────────────────────────────────────────────
 # EKS Cluster
 # ─────────────────────────────────────────────
 variable "enable_eks" {

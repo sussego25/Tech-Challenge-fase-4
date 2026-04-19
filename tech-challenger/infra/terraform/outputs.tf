@@ -74,6 +74,29 @@ output "lambda_invoke_arn" {
 }
 
 # ─────────────────────────────────────────────
+# Networking (VPC)
+# ─────────────────────────────────────────────
+output "vpc_id" {
+  description = "ID da VPC (null quando enable_networking=false)"
+  value       = try(module.networking[0].vpc_id, null)
+}
+
+output "public_subnet_ids" {
+  description = "IDs das subnets publicas (null quando enable_networking=false)"
+  value       = try(module.networking[0].public_subnet_ids, null)
+}
+
+output "private_subnet_ids" {
+  description = "IDs das subnets privadas (null quando enable_networking=false)"
+  value       = try(module.networking[0].private_subnet_ids, null)
+}
+
+output "eks_nodes_security_group_id" {
+  description = "ID do security group para nodes EKS (null quando enable_networking=false)"
+  value       = try(module.networking[0].eks_nodes_security_group_id, null)
+}
+
+# ─────────────────────────────────────────────
 # EKS
 # ─────────────────────────────────────────────
 output "eks_cluster_name" {

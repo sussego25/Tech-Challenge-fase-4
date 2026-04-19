@@ -93,6 +93,18 @@ module "worker_iam" {
   common_tags                 = var.common_tags
 }
 
+module "networking" {
+  count  = var.enable_networking ? 1 : 0
+  source = "../networking/terraform"
+
+  aws_region    = var.aws_region
+  environment   = var.environment
+  project_name  = var.project_name
+  common_tags   = var.common_tags
+  vpc_cidr      = var.vpc_cidr
+  enable_ha_nat = var.enable_ha_nat
+}
+
 module "eks" {
   count  = var.enable_eks ? 1 : 0
   source = "../eks/terraform"
@@ -102,8 +114,8 @@ module "eks" {
   project_name       = var.project_name
   common_tags        = var.common_tags
   cluster_version    = var.eks_cluster_version
-  vpc_id             = var.eks_vpc_id
-  subnet_ids         = var.eks_subnet_ids
+  vpc_id             = var.enable_networking ? module.networking[0].vpc_id : var.eks_vpc_id
+  subnet_ids         = var.enable_networking ? module.networking[0].private_subnet_ids : var.eks_subnet_ids
   node_instance_type = var.eks_node_instance_type
   node_desired_size  = var.eks_node_desired_size
   node_min_size      = var.eks_node_min_size
@@ -133,11 +145,11 @@ module "kafka" {
   environment            = var.environment
   project_name           = var.project_name
   common_tags            = var.common_tags
-  vpc_id                 = var.kafka_vpc_id
-  subnet_ids             = var.kafka_subnet_ids
+  vpc_id                 = var.enable_networking ? module.networking[0].vpc_id : var.kafka_vpc_id
+  subnet_ids             = var.enable_networking ? module.networking[0].private_subnet_ids : var.kafka_subnet_ids
   kafka_version          = var.kafka_version
   broker_instance_type   = var.kafka_broker_instance_type
   number_of_broker_nodes = var.kafka_number_of_broker_nodes
   broker_volume_size     = var.kafka_broker_volume_size
-  allowed_cidr_blocks    = var.kafka_allowed_cidr_blocks
+  allowed_cidr_blocks    = var.enable_networking ? module.networking[0].private_subnet_cidrs : var.kafka_allowed_cidr_blocks
 }
