@@ -81,13 +81,10 @@ module "worker_iam" {
   count  = var.enable_worker_iam ? 1 : 0
   source = "../eks/terraform/iam"
 
-  environment  = var.environment
-  project_name = var.project_name
-  # Quando enable_eks=true, popule automaticamente com os outputs do modulo eks:
-  # eks_oidc_provider_arn  = var.enable_eks ? module.eks[0].oidc_provider_arn : var.eks_oidc_provider_arn
-  # eks_oidc_provider_url  = var.enable_eks ? replace(module.eks[0].oidc_provider_url, "https://", "") : replace(var.eks_oidc_provider_url, "https://", "")
-  eks_oidc_provider_arn       = var.eks_oidc_provider_arn
-  eks_oidc_provider_url       = replace(var.eks_oidc_provider_url, "https://", "")
+  environment                 = var.environment
+  project_name                = var.project_name
+  eks_oidc_provider_arn       = var.enable_eks ? module.eks[0].oidc_provider_arn : var.eks_oidc_provider_arn
+  eks_oidc_provider_url       = var.enable_eks ? replace(module.eks[0].oidc_provider_url, "https://", "") : replace(var.eks_oidc_provider_url, "https://", "")
   k8s_namespace               = var.k8s_namespace
   k8s_service_account_name    = var.k8s_service_account_name
   sqs_queue_arn               = module.sqs.architecture_analysis_queue_arn

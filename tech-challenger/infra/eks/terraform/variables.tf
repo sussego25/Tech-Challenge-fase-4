@@ -22,7 +22,7 @@ variable "common_tags" {
 variable "cluster_version" {
   description = "Versao do Kubernetes para o cluster EKS"
   type        = string
-  default     = "1.29"
+  default     = "1.30"
 }
 
 variable "vpc_id" {

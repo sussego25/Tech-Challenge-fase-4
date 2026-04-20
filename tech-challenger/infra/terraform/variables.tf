@@ -95,7 +95,7 @@ variable "enable_eks" {
 variable "eks_cluster_version" {
   description = "Versao do Kubernetes para o cluster EKS"
   type        = string
-  default     = "1.29"
+  default     = "1.30"
 }
 
 variable "eks_vpc_id" {

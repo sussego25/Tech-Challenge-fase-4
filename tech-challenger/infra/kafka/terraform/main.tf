@@ -21,7 +21,6 @@ resource "aws_msk_configuration" "main" {
     unclean.leader.election.enable=true
     log.retention.hours=168
     log.segment.bytes=1073741824
-    log.retention.check.interval.ms=300000
   PROPERTIES
 }
 

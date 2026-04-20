@@ -38,95 +38,123 @@ jobs:
 
       - name: Terraform Plan (Infra Root)
         working-directory: tech-challenger/infra/terraform
-        run: terraform plan -var="environment=${{ env.ENVIRONMENT }}"  # Mostra o que será criado/alterado
+        run: terraform plan -var="environment=${{ env.ENVIRONMENT }}"
 
       - name: Terraform Apply (Infra Root)
         working-directory: tech-challenger/infra/terraform
-        run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"  # Aplica as mudanças
+        run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"
 
-      # Repita para outros módulos (ex.: DynamoDB)
-    #   - name: Terraform Init (DynamoDB)
-    #     working-directory: tech-challenger/infra/dynamodb/terraform
-    #     run: terraform init
+      - name: Export Terraform Outputs
+        id: tf-outputs
+        working-directory: tech-challenger/infra/terraform
+        run: |
+          echo "eks_cluster_name=$(terraform output -raw eks_cluster_name)" >> $GITHUB_OUTPUT
+          echo "worker_role_arn=$(terraform output -raw worker_service_role_arn)" >> $GITHUB_OUTPUT
+          echo "sqs_queue_url=$(terraform output -raw architecture_analysis_queue_url)" >> $GITHUB_OUTPUT
+          echo "s3_bucket=$(terraform output -raw diagrams_bucket_name)" >> $GITHUB_OUTPUT
+          echo "dynamodb_table=$(terraform output -raw diagrams_table_name)" >> $GITHUB_OUTPUT
+          echo "kafka_brokers=$(terraform output -raw kafka_bootstrap_brokers)" >> $GITHUB_OUTPUT
 
-    #   - name: Terraform Plan (DynamoDB)
-    #     working-directory: tech-challenger/infra/dynamodb/terraform
-    #     run: terraform plan -var="environment=${{ env.ENVIRONMENT }}"
-
-    #   - name: Terraform Apply (DynamoDB)
-    #     working-directory: tech-challenger/infra/dynamodb/terraform
-    #     run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"
-
-      # Adicione mais módulos conforme necessário (ex.: EKS, VPC)
-      # Exemplo para EKS:
-      # - name: Terraform Init (EKS)
-      #   working-directory: tech-challenger/infra/eks/terraform
-      #   run: terraform init
-      # - name: Terraform Apply (EKS)
-      #   working-directory: tech-challenger/infra/eks/terraform
-      #   run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}"
+    outputs:
+      eks_cluster_name: ${{ steps.tf-outputs.outputs.eks_cluster_name }}
+      worker_role_arn: ${{ steps.tf-outputs.outputs.worker_role_arn }}
+      sqs_queue_url: ${{ steps.tf-outputs.outputs.sqs_queue_url }}
+      s3_bucket: ${{ steps.tf-outputs.outputs.s3_bucket }}
+      dynamodb_table: ${{ steps.tf-outputs.outputs.dynamodb_table }}
+      kafka_brokers: ${{ steps.tf-outputs.outputs.kafka_brokers }}
 
   # Job 2: Deploy dos Serviços (Docker → ECR → Helm no EKS)
-  # Desabilitado: EKS/Kafka não estão provisionados ainda.
-  # Reabilitar quando os clusters estiverem criados e os secrets configurados:
-  #   EKS_CLUSTER_NAME, WORKER_IAM_ROLE_ARN, SQS_QUEUE_URL, S3_BUCKET,
-  #   DYNAMODB_TABLE, KAFKA_BOOTSTRAP_SERVERS, SAGEMAKER_ENDPOINT
-  # deploy-services:
-  #   runs-on: ubuntu-latest
-  #   needs: deploy-infra
-  #   steps:
-  #     - name: Checkout código
-  #       uses: actions/checkout@v4
-  #     - name: Configurar credenciais AWS
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ secrets.AWS_REGION }}
-  #     - name: Login no Amazon ECR
-  #       id: login-ecr
-  #       uses: aws-actions/amazon-ecr-login@v2
-  #     - name: Build e Push worker-service para ECR
-  #       env:
-  #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-  #         IMAGE_TAG: ${{ github.sha }}
-  #       run: |
-  #         docker build -f tech-challenger/services/worker-service/Dockerfile \
-  #           -t $ECR_REGISTRY/worker-service:$IMAGE_TAG \
-  #           -t $ECR_REGISTRY/worker-service:latest tech-challenger/
-  #         docker push $ECR_REGISTRY/worker-service:$IMAGE_TAG
-  #         docker push $ECR_REGISTRY/worker-service:latest
-  #     - name: Build e Push notification-service para ECR
-  #       env:
-  #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-  #         IMAGE_TAG: ${{ github.sha }}
-  #       run: |
-  #         docker build -f tech-challenger/services/notification-service/Dockerfile \
-  #           -t $ECR_REGISTRY/notification-service:$IMAGE_TAG \
-  #           -t $ECR_REGISTRY/notification-service:latest tech-challenger/
-  #         docker push $ECR_REGISTRY/notification-service:$IMAGE_TAG
-  #         docker push $ECR_REGISTRY/notification-service:latest
-  #     - name: Configurar kubeconfig para EKS
-  #       run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
-  #     - name: Deploy worker-service via Helm
-  #       env:
-  #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-  #         IMAGE_TAG: ${{ github.sha }}
-  #       run: |
-  #         helm upgrade --install worker-service \
-  #           tech-challenger/infra/eks/helm-charts/worker-service \
-  #           --namespace ${{ env.ENVIRONMENT }} --create-namespace \
-  #           --set image.repository=$ECR_REGISTRY/worker-service \
-  #           --set image.tag=$IMAGE_TAG \
-  #           --wait --timeout 5m
-  #     - name: Deploy notification-service via Helm
-  #       env:
-  #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-  #         IMAGE_TAG: ${{ github.sha }}
-  #       run: |
-  #         helm upgrade --install notification-service \
-  #           tech-challenger/infra/eks/helm-charts/notification-service \
-  #           --namespace ${{ env.ENVIRONMENT }} --create-namespace \
-  #           --set image.repository=$ECR_REGISTRY/notification-service \
-  #           --set image.tag=$IMAGE_TAG \
-  #           --wait --timeout 5m
+  deploy-services:
+    runs-on: ubuntu-latest
+    needs: deploy-infra
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build e Push worker-service para ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -f tech-challenger/services/worker-service/Dockerfile \
+            -t $ECR_REGISTRY/worker-service:$IMAGE_TAG \
+            -t $ECR_REGISTRY/worker-service:latest \
+            tech-challenger/
+          docker push $ECR_REGISTRY/worker-service:$IMAGE_TAG
+          docker push $ECR_REGISTRY/worker-service:latest
+
+      - name: Build e Push notification-service para ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -f tech-challenger/services/notification-service/Dockerfile \
+            -t $ECR_REGISTRY/notification-service:$IMAGE_TAG \
+            -t $ECR_REGISTRY/notification-service:latest \
+            tech-challenger/
+          docker push $ECR_REGISTRY/notification-service:$IMAGE_TAG
+          docker push $ECR_REGISTRY/notification-service:latest
+
+      - name: Instalar kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configurar kubeconfig para EKS
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ env.AWS_REGION }} \
+            --name ${{ needs.deploy-infra.outputs.eks_cluster_name }}
+
+      - name: Instalar Helm
+        uses: azure/setup-helm@v3
+
+      - name: Deploy worker-service via Helm
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          helm upgrade --install worker-service \
+            tech-challenger/infra/eks/helm-charts/worker-service \
+            --namespace ${{ env.ENVIRONMENT }} \
+            --create-namespace \
+            --set image.repository=$ECR_REGISTRY/worker-service \
+            --set image.tag=$IMAGE_TAG \
+            --set "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=${{ needs.deploy-infra.outputs.worker_role_arn }}" \
+            --set env.AWS_REGION=${{ env.AWS_REGION }} \
+            --set env.SQS_QUEUE_URL=${{ needs.deploy-infra.outputs.sqs_queue_url }} \
+            --set env.S3_BUCKET=${{ needs.deploy-infra.outputs.s3_bucket }} \
+            --set env.DYNAMODB_TABLE=${{ needs.deploy-infra.outputs.dynamodb_table }} \
+            --set env.KAFKA_BOOTSTRAP_SERVERS=${{ needs.deploy-infra.outputs.kafka_brokers }} \
+            --set env.KAFKA_TOPIC_ARCHITECTURE_ANALYSIS=architecture-analysis \
+            --set env.KAFKA_GROUP_ID=worker-service \
+            --wait --timeout 5m
+
+      - name: Deploy notification-service via Helm
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          helm upgrade --install notification-service \
+            tech-challenger/infra/eks/helm-charts/notification-service \
+            --namespace ${{ env.ENVIRONMENT }} \
+            --create-namespace \
+            --set image.repository=$ECR_REGISTRY/notification-service \
+            --set image.tag=$IMAGE_TAG \
+            --set env.AWS_REGION=${{ env.AWS_REGION }} \
+            --set env.KAFKA_BOOTSTRAP_SERVERS=${{ needs.deploy-infra.outputs.kafka_brokers }} \
+            --set env.KAFKA_TOPIC_ANALYSIS_COMPLETED=analysis-completed \
+            --set env.KAFKA_GROUP_ID=notification-service \
+            --set env.DYNAMODB_TABLE=${{ needs.deploy-infra.outputs.dynamodb_table }} \
+            --wait --timeout 5m

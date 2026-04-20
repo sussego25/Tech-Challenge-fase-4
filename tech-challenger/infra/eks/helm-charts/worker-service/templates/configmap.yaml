@@ -6,7 +6,6 @@ metadata:
     app.kubernetes.io/name: {{ include "worker-service.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
-  AWS_REGION: {{ .Values.env.AWS_REGION | quote }}
-  ENVIRONMENT: {{ .Values.env.ENVIRONMENT | quote }}
-  SQS_QUEUE_URL: {{ .Values.env.SQS_QUEUE_URL | quote }}
-  KAFKA_BOOTSTRAP_SERVERS: {{ .Values.env.KAFKA_BOOTSTRAP_SERVERS | quote }}
+  {{- range $key, $val := .Values.env }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end }}
