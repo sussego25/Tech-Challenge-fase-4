@@ -157,3 +157,13 @@ module "kafka" {
   broker_volume_size     = var.kafka_broker_volume_size
   allowed_cidr_blocks    = var.enable_networking ? module.networking[0].private_subnet_cidrs : var.kafka_allowed_cidr_blocks
 }
+
+module "ecr" {
+  source = "../ecr/terraform"
+
+  environment           = var.environment
+  project_name          = var.project_name
+  repository_names      = var.ecr_repository_names
+  image_retention_count = var.ecr_image_retention_count
+  common_tags           = var.common_tags
+}

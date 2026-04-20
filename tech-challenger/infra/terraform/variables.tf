@@ -217,3 +217,18 @@ variable "kafka_allowed_cidr_blocks" {
   type        = list(string)
   default     = []
 }
+
+# ─────────────────────────────────────────────
+# ECR
+# ─────────────────────────────────────────────
+variable "ecr_repository_names" {
+  description = "Lista de nomes de repositorios ECR a criar"
+  type        = list(string)
+  default     = ["worker-service", "notification-service"]
+}
+
+variable "ecr_image_retention_count" {
+  description = "Numero maximo de imagens a manter por repositorio ECR"
+  type        = number
+  default     = 10
+}

@@ -164,3 +164,16 @@ output "kafka_security_group_id" {
   description = "ID do security group do cluster MSK (null quando enable_kafka=false)"
   value       = try(module.kafka[0].security_group_id, null)
 }
+
+# ─────────────────────────────────────────────
+# ECR
+# ─────────────────────────────────────────────
+output "ecr_repository_urls" {
+  description = "Map de nome do repositorio para URL do ECR"
+  value       = module.ecr.repository_urls
+}
+
+output "ecr_repository_arns" {
+  description = "Map de nome do repositorio para ARN do ECR"
+  value       = module.ecr.repository_arns
+}
