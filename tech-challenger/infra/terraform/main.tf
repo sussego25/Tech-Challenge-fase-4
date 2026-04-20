@@ -14,6 +14,12 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+  backend "s3" {
+    bucket = "tech-challenger-tfstate-325066546876"
+    key    = "infra/terraform.tfstate"
+    region = "us-east-1"
+  }
 }
 
 provider "aws" {
