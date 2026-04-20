@@ -44,6 +44,13 @@ resource "aws_eks_cluster" "main" {
     endpoint_private_access = true
   }
 
+  # Habilita access entries (API_AND_CONFIG_MAP) para permitir que o CI/CD
+  # se auto-conceda acesso sem precisar modificar o aws-auth ConfigMap
+  access_config {
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true
+  }
+
   tags = var.common_tags
 
   depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]
