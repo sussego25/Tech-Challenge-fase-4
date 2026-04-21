@@ -22,6 +22,7 @@ resource "null_resource" "build_lambda_package" {
       cp -r "${local.handler_src_path}/." "${local.build_path}/"
       cp -r "${local.shared_path}/contracts" "${local.build_path}/contracts"
       cp -r "${local.shared_path}/libs" "${local.build_path}/libs"
+      pip install -r "${local.handler_src_path}/requirements.txt" -t "${local.build_path}" --quiet
     EOT
   }
 }
