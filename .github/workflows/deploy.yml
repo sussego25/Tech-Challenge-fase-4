@@ -194,6 +194,18 @@ jobs:
       - name: Instalar Helm
         uses: azure/setup-helm@v3
 
+      - name: Aguardar nodes EKS ficarem Ready
+        # Nodes EC2 levam ~3-5min após o cluster ACTIVE para ficarem prontos.
+        # Sem essa espera, os pods ficam Pending e o Helm --wait timeout.
+        run: |
+          echo "Aguardando nodes ficarem Ready (máx 8min)..."
+          kubectl wait nodes \
+            --all \
+            --for=condition=Ready \
+            --timeout=480s
+          echo "✅ Nodes prontos:"
+          kubectl get nodes
+
       - name: Deploy worker-service via Helm
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -225,7 +237,6 @@ jobs:
             --create-namespace \
             --set image.repository=$ECR_REGISTRY/notification-service \
             --set image.tag=$IMAGE_TAG \
-            --set env.AWS_REGION=${{ env.AWS_REGION }} \
             --set env.AWS_REGION=${{ env.AWS_REGION }} \
             --set env.KAFKA_BOOTSTRAP_SERVERS=${{ needs.deploy-infra.outputs.kafka_brokers }} \
             --set env.KAFKA_TOPIC_ANALYSIS_COMPLETED=analysis-completed \
