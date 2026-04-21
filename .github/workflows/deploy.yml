@@ -31,6 +31,18 @@ jobs:
         with:
           terraform_version: "1.5.0"  # Versão do Terraform
 
+      - name: Build Lambda package
+        run: |
+          HANDLER_SRC="tech-challenger/services/lambda-functions/order-handler"
+          SHARED_SRC="tech-challenger/shared"
+          BUILD_PATH="tech-challenger/infra/lambda/terraform/build"
+          rm -rf "$BUILD_PATH"
+          mkdir -p "$BUILD_PATH"
+          cp -r "$HANDLER_SRC/." "$BUILD_PATH/"
+          cp -r "$SHARED_SRC/contracts" "$BUILD_PATH/contracts"
+          cp -r "$SHARED_SRC/libs" "$BUILD_PATH/libs"
+          pip install -r "$HANDLER_SRC/requirements.txt" -t "$BUILD_PATH" --quiet
+
       # Infra raiz: SQS + IAM por recurso
       - name: Terraform Init (Infra Root)
         working-directory: tech-challenger/infra/terraform
