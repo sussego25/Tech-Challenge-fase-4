@@ -4,22 +4,25 @@
 
 ## Visão Geral
 
-O projeto é um **analisador de diagramas de arquitetura** baseado em microsserviços. O usuário envia uma imagem de diagrama via API, e o sistema analisa automaticamente os componentes usando um modelo de linguagem (LLM via SageMaker), retornando os resultados ao usuário.
+O projeto é um **analisador de diagramas de arquitetura** baseado em microsserviços. O usuário faz upload de uma imagem de diagrama diretamente no S3, o evento aciona automaticamente uma Lambda que inicia o pipeline de análise assíncrona dos componentes. A análise retorna um relatório textual com os elementos detectados no diagrama.
 
+> **Nota:** A análise de componentes atualmente retorna dados mockados. A integração com YOLO (detecção visual de componentes) + LLM (descrição textual) está planejada para uma fase futura.
 
 ---
 
 ## Fluxo Completo de Dados
+
 ```
 [Usuário]
-    │  POST /upload (imagem + x-user-id header)
+    │  PUT objeto no S3 (prefixo: diagrams/)
     ▼
-[order-handler] ← Lambda AWS (API Gateway trigger)
-    │  1. Valida content-type e user-id
-    │  2. Faz upload da imagem → S3 (key: diagrams/{user_id}/{diagram_id})
-    │  3. Salva ArchitectureDiagram no DynamoDB (status=PENDING)
+[S3 Event Notification]
+    ▼
+[order-handler] ← Lambda AWS (trigger: s3:ObjectCreated:*)
+    │  1. Lê bucket e key do evento S3
+    │  2. Verifica existência do objeto via head_object
+    │  3. Cria ArchitectureDiagram no DynamoDB (status=PENDING)
     │  4. Publica ArchitectureAnalysisRequestedEvent → SQS
-    │  5. Retorna 202 com diagram_id
     ▼
 [SQS Queue]
     ▼
@@ -27,7 +30,7 @@ O projeto é um **analisador de diagramas de arquitetura** baseado em microsserv
     │  1. Consome evento do SQS
     │  2. Atualiza DynamoDB: PENDING → PROCESSING
     │  3. Baixa imagem do S3
-    │  4. Invoca LLM via SageMaker → recebe relatório + elementos
+    │  4. Executa AnalysisService (mock) → relatório + elementos detectados
     │  5. Atualiza DynamoDB: PROCESSING → COMPLETED (ou FAILED)
     │  6. Publica ArchitectureAnalysisCompletedEvent → Kafka
     │  7. Deleta mensagem do SQS
@@ -38,7 +41,7 @@ O projeto é um **analisador de diagramas de arquitetura** baseado em microsserv
     │  1. Consome evento do Kafka
     │  2. Formata mensagem de notificação
     │  3. Envia notificação (via NotificationSender — logging atualmente)
-    │  4. Salva Notification no DynamoDB (status=sent ou failed)
+    │  4. Salva Notification no DynamoDB (status=SENT ou FAILED)
 ```
 
 ---
@@ -46,16 +49,16 @@ O projeto é um **analisador de diagramas de arquitetura** baseado em microsserv
 ## Interações entre Recursos AWS
 
 ```
-API Gateway → order-handler (Lambda)
-                 │
-                 ├── S3          (armazena imagens dos diagramas)
-                 ├── DynamoDB    (cria registro PENDING)
-                 └── SQS         (enfileira evento de análise)
+S3 (upload do usuário)
+    └── S3 Event Notification → order-handler (Lambda)
+                                    │
+                                    ├── S3          (verifica existência do objeto)
+                                    ├── DynamoDB    (cria registro PENDING)
+                                    └── SQS         (enfileira evento de análise)
 
 SQS → worker-service (EKS container)
           │
           ├── S3          (baixa imagem)
-          ├── SageMaker   (analisa via LLM)
           ├── DynamoDB    (atualiza status)
           ├── Kafka        (publica resultado)
           └── SQS          (deleta mensagem processada)
@@ -73,9 +76,9 @@ Kafka → notification-service (EKS container)
 
 | Arquivo | Descrição |
 |---|---|
-| `entities/architecture_diagram.py` | Entidade `ArchitectureDiagram` com máquina de estados (`PENDING → PROCESSING → COMPLETED/FAILED`) |
-| `events/analysis_requested.py` | Evento `ArchitectureAnalysisRequestedEvent` — publicado pelo order-handler no SQS |
-| `events/analysis_completed.py` | Evento `ArchitectureAnalysisCompletedEvent` — publicado pelo worker no Kafka |
+| `entities/architecture_diagram.py` | Entidade `ArchitectureDiagram` com máquina de estados (`PENDING → PROCESSING → COMPLETED/FAILED`). Campos: `diagram_id`, `s3_bucket`, `s3_key`, `status`, `created_at`, `updated_at`, `analysis_report`, `elements_detected` |
+| `events/analysis_requested.py` | Evento `ArchitectureAnalysisRequestedEvent` — publicado pelo order-handler no SQS. Campos: `diagram_id`, `s3_bucket`, `s3_key`, `requested_at`, `metadata` |
+| `events/analysis_completed.py` | Evento `ArchitectureAnalysisCompletedEvent` — publicado pelo worker no Kafka. Campos: `diagram_id`, `status`, `analysis_report`, `elements_detected`, `completed_at`, `error_message` |
 | `dto/diagram_upload.py` | DTO `DiagramUploadRequest` — valida content-types aceitos (png, jpeg, jpg, webp) |
 | `dto/analysis_status.py` | DTO `AnalysisStatusResponse` — resposta de consulta de status |
 
@@ -85,18 +88,18 @@ Kafka → notification-service (EKS container)
 |---|---|
 | `aws/s3_client.py` | `S3Client` — upload e download de arquivos no S3 via boto3 |
 | `aws/sqs_client.py` | `SQSClient` — send, receive (long polling 20s) e delete de mensagens SQS |
-| `llm/sagemaker_client.py` | `LLMClient` — invoca endpoint SageMaker com prompt, retorna `generated_text` |
+| `llm/sagemaker_client.py` | `LLMClient` — cliente SageMaker (reservado para integração futura YOLO+LLM) |
 | `messaging/kafka_producer.py` | `KafkaProducer` — publica mensagens Kafka via `confluent_kafka` |
 | `messaging/kafka_consumer.py` | `KafkaConsumer` — consome Kafka em loop infinito com handler callback |
 
 ### `services/lambda-functions/order-handler` — Ponto de entrada
 
-Arquitetura: **Lambda AWS acionado pelo API Gateway**
+Arquitetura: **Lambda AWS acionada por evento S3**
 
 | Arquivo | Descrição |
 |---|---|
-| `handler.py` | Entry point Lambda. Valida headers (`x-user-id`, `content-type`), decodifica body (suporta base64), retorna 202 |
-| `use_cases.py` | `ProcessDiagramUploadUseCase` — orquestra upload S3 + publicação SQS + salvamento DynamoDB |
+| `handler.py` | Entry point Lambda. Lê `bucket` e `key` do evento S3 (`event["Records"]`), verifica o objeto via `head_object`, aciona o use case |
+| `use_cases.py` | `ProcessDiagramUploadUseCase` — cria `ArchitectureDiagram`, publica no SQS e salva no DynamoDB |
 | `repositories.py` | `DynamoDBDiagramRepository` — persiste e recupera `ArchitectureDiagram` do DynamoDB |
 | `config.py` | Lê `S3_BUCKET`, `SQS_QUEUE_URL`, `DYNAMODB_TABLE`, `AWS_REGION` de variáveis de ambiente |
 
@@ -107,8 +110,8 @@ Arquitetura: **Hexagonal**, serviço long-running em container
 | Arquivo | Descrição |
 |---|---|
 | `consumers/sqs_consumer.py` | `SQSConsumer` — loop infinito, busca batches de 10 msgs, deleta após sucesso |
-| `processors/diagram_processor.py` | `DiagramProcessor` — orquestra: get repo → mark_processing → download S3 → LLM → mark_completed/failed → save → publicar Kafka |
-| `domain/analysis_service.py` | `AnalysisService` — constrói prompt, invoca `LLMClient`, extrai elementos detectados via keywords |
+| `processors/diagram_processor.py` | `DiagramProcessor` — orquestra: get repo → mark_processing → download S3 → análise → mark_completed/failed → save → publicar Kafka |
+| `domain/analysis_service.py` | `AnalysisService` — **mock**: retorna relatório e elementos detectados fixos. TODO: integrar YOLO + LLM |
 | `infrastructure/diagram_repository.py` | DynamoDB para `ArchitectureDiagram` |
 | `infrastructure/kafka_publisher.py` | `KafkaPublisher` — publica `ArchitectureAnalysisCompletedEvent` no tópico Kafka |
 | `jobs/worker.py` | `main()` — instancia dependências e inicia o `SQSConsumer` |
@@ -161,6 +164,39 @@ python -m pytest tests\unit\notification_service\ -v
 
 ---
 
+## Infraestrutura AWS (Terraform)
+
+Todos os recursos são gerenciados via Terraform com backend remoto no S3 (`tech-challenger-tfstate-325066546876`), região `us-east-1`, ambiente `prod`.
+
+### Recursos provisionados
+
+| Módulo | Recurso | Status |
+|---|---|---|
+| `s3` | Bucket `tech-challenger-diagrams-prod-*` | ✅ Ativo |
+| `dynamodb` | Tabela `diagrams` (hash_key: `diagram_id`) | ✅ Ativo |
+| `dynamodb` | Tabela `notifications` (GSI: `diagram-notifications-index`) | ✅ Ativo |
+| `sqs` | Fila `architecture-analysis-queue-prod` + DLQ | ✅ Ativo |
+| `lambda` | Função `tech-challenger-order-handler-prod` | ✅ Ativo |
+| `lambda` | Permission para S3 invocar a Lambda | ✅ Ativo |
+| `s3` | S3 Bucket Notification → Lambda (prefixo: `diagrams/`) | ✅ Ativo |
+| `networking` | VPC, subnets públicas/privadas, NAT Gateway | ✅ Ativo |
+| `eks` | Cluster EKS + node group `t3.small` (desired=1) | ✅ Ativo |
+| `kafka` | MSK 2x `kafka.t3.small` | ✅ Ativo |
+| `sagemaker` | Endpoint SageMaker | ❌ Desabilitado |
+
+### Comandos Terraform
+
+```powershell
+cd tech-challenger\infra\terraform
+terraform init
+terraform plan
+terraform apply
+# Para destruir tudo:
+terraform destroy
+```
+
+---
+
 ## Variáveis de Ambiente
 
 ### order-handler (Lambda)
@@ -179,16 +215,15 @@ python -m pytest tests\unit\notification_service\ -v
 | `S3_BUCKET` | Nome do bucket S3 |
 | `SQS_QUEUE_URL` | URL da fila SQS |
 | `DYNAMODB_TABLE` | Nome da tabela DynamoDB de diagramas |
-| `KAFKA_BOOTSTRAP_SERVERS` | Endereço dos brokers Kafka |
+| `KAFKA_BOOTSTRAP_SERVERS` | Endereço dos brokers Kafka/MSK |
 | `KAFKA_TOPIC_ANALYSIS_COMPLETED` | Tópico Kafka de resultados (padrão: `analysis-completed`) |
-| `SAGEMAKER_ENDPOINT` | Nome do endpoint SageMaker (LLM) |
 | `AWS_REGION` | Região AWS (padrão: `us-east-1`) |
 
 ### notification-service
 
 | Variável | Descrição |
 |---|---|
-| `KAFKA_BOOTSTRAP_SERVERS` | Endereço dos brokers Kafka |
+| `KAFKA_BOOTSTRAP_SERVERS` | Endereço dos brokers Kafka/MSK |
 | `KAFKA_TOPIC_ANALYSIS_COMPLETED` | Tópico Kafka consumido (padrão: `analysis-completed`) |
 | `KAFKA_GROUP_ID` | Consumer group ID (padrão: `notification-service`) |
 | `DYNAMODB_TABLE` | Nome da tabela DynamoDB de notificações |
@@ -196,8 +231,8 @@ python -m pytest tests\unit\notification_service\ -v
 
 ---
 
-## Pendências
+## Pendências / Trabalho Futuro
 
+- `AnalysisService` — integrar YOLO (detecção visual de componentes) + LLM (descrição textual) via SageMaker
+- `NotificationSender` — integração com SES/e-mail pendente
 - `lambda-functions/notification-handler/` e `sagemaker-handler/` — não implementados
-- `NotificationSender` — atualmente só faz logging; integração com SES/e-mail pendente
-- `infra/` (Terraform) — estrutura criada, código de provisionamento pendente

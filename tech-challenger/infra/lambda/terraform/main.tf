@@ -1,15 +1,42 @@
 locals {
   function_name    = "${var.project_name}-order-handler-${var.environment}"
-  handler_src_path = "${path.module}/../../../services/lambda-functions/order-handler"
+  handler_src_path = abspath("${path.module}/../../../services/lambda-functions/order-handler")
+  shared_path      = abspath("${path.module}/../../../shared")
+  build_path       = abspath("${path.module}/build")
 }
 
 # -------------------------------------------------------------------
-# Empacota o codigo-fonte da Lambda em um zip
+# Prepara diretorio de build com handler + contracts + libs
+# -------------------------------------------------------------------
+resource "null_resource" "build_lambda_package" {
+  triggers = {
+    handler_src = sha256(join("", [for f in fileset(local.handler_src_path, "**/*.py") : filesha256("${local.handler_src_path}/${f}")]))
+    shared_src  = sha256(join("", [for f in fileset(local.shared_path, "**/*.py") : filesha256("${local.shared_path}/${f}")]))
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["PowerShell", "-Command"]
+    command     = <<-EOT
+      $buildPath = '${local.build_path}'
+      $handlerPath = '${local.handler_src_path}'
+      $sharedPath = '${local.shared_path}'
+      Remove-Item -Recurse -Force $buildPath -ErrorAction SilentlyContinue
+      New-Item -ItemType Directory -Force -Path $buildPath | Out-Null
+      Copy-Item -Recurse "$handlerPath\*" "$buildPath\"
+      Copy-Item -Recurse "$sharedPath\contracts" "$buildPath\contracts"
+      Copy-Item -Recurse "$sharedPath\libs" "$buildPath\libs"
+    EOT
+  }
+}
+
+# -------------------------------------------------------------------
+# Empacota o build em um zip
 # -------------------------------------------------------------------
 data "archive_file" "order_handler" {
   type        = "zip"
-  source_dir  = local.handler_src_path
+  source_dir  = local.build_path
   output_path = "${path.module}/lambda_order_handler.zip"
+  depends_on  = [null_resource.build_lambda_package]
 
   excludes = [
     "__pycache__",

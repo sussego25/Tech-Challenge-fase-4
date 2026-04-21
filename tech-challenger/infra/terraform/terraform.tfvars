@@ -1,3 +1,5 @@
+environment = "prod"
+
 # ─────────────────────────────────────────────
 # Feature flags — habilitar módulos condicionais
 # ─────────────────────────────────────────────
