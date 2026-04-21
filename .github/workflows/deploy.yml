@@ -37,10 +37,48 @@ jobs:
         # - Compatível com Lambda Python 3.11 Linux x86_64
         run: cd tech-challenger/infra/lambda && python3 build_package.py
 
-      # Infra raiz: SQS + IAM por recurso
       - name: Terraform Init (Infra Root)
         working-directory: tech-challenger/infra/terraform
-        run: terraform init  # Inicializa o Terraform
+        run: terraform init
+
+      # ----------------------------------------------------------------
+      # Limpeza de state para recursos deletados manualmente no console.
+      # Deve rodar APÓS terraform init (precisa do backend configurado).
+      # Protege contra o caso em que o EKS foi deletado fora do Terraform:
+      #   1. Remove cluster e node group do state (não existem mais na AWS)
+      #   2. Deleta o OIDC provider IAM órfão da AWS (URL do cluster antigo)
+      #      e remove do state — a AWS não permite alterar a URL, só recriar
+      # O worker IRSA role permanece no state (ainda existe na AWS);
+      # o Terraform atualiza seu trust policy via module.eks[0].oidc_provider_arn.
+      # ----------------------------------------------------------------
+      - name: Limpar state do EKS se deletado manualmente
+        working-directory: tech-challenger/infra/terraform
+        run: |
+          CLUSTER_NAME="tech-challenger-${{ env.ENVIRONMENT }}"
+
+          EXISTS=$(aws eks describe-cluster --name "$CLUSTER_NAME" \
+            --query 'cluster.status' --output text 2>/dev/null || echo "NOT_FOUND")
+
+          if [ "$EXISTS" = "NOT_FOUND" ]; then
+            echo "⚠️  Cluster '$CLUSTER_NAME' não encontrado na AWS. Limpando state..."
+
+            terraform state rm 'module.eks[0].aws_eks_cluster.main'    2>/dev/null || true
+            terraform state rm 'module.eks[0].aws_eks_node_group.main' 2>/dev/null || true
+
+            OIDC_ARN=$(terraform state show 'module.eks[0].aws_iam_openid_connect_provider.eks' \
+              2>/dev/null | grep '^\s*arn\s' | awk '{print $3}' | tr -d '"' || echo "")
+
+            if [ -n "$OIDC_ARN" ]; then
+              echo "Deletando OIDC provider órfão: $OIDC_ARN"
+              aws iam delete-open-id-connect-provider \
+                --open-id-connect-provider-arn "$OIDC_ARN" 2>/dev/null || true
+            fi
+
+            terraform state rm 'module.eks[0].aws_iam_openid_connect_provider.eks' 2>/dev/null || true
+            echo "✅ State limpo. Terraform recriará EKS do zero."
+          else
+            echo "✅ Cluster '$CLUSTER_NAME' encontrado ($EXISTS). Sem limpeza necessária."
+          fi
 
       - name: Terraform Plan (Infra Root)
         working-directory: tech-challenger/infra/terraform
