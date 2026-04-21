@@ -68,11 +68,6 @@ output "lambda_function_arn" {
   value       = module.lambda.lambda_function_arn
 }
 
-output "lambda_invoke_arn" {
-  description = "ARN de invocacao da Lambda (usado pelo API Gateway)"
-  value       = module.lambda.lambda_invoke_arn
-}
-
 # ─────────────────────────────────────────────
 # Networking (VPC)
 # ─────────────────────────────────────────────

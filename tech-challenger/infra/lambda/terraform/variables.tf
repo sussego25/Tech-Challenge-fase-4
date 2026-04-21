@@ -41,4 +41,9 @@ variable "dynamodb_table_name" {
   type        = string
 }
 
+variable "s3_bucket_arn" {
+  description = "ARN do bucket S3 de diagramas (para permissao de invocacao pelo S3)"
+  type        = string
+}
+
 

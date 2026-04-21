@@ -17,7 +17,6 @@ class NotifyAnalysisCompletedUseCase:
         message = self._format_message(event)
         notification = Notification(
             diagram_id=event.diagram_id,
-            user_id=event.user_id,
             message=message,
         )
 
@@ -34,10 +33,10 @@ class NotifyAnalysisCompletedUseCase:
         if event.status == AnalysisStatus.COMPLETED:
             elements_str = ", ".join(event.elements_detected) if event.elements_detected else "none"
             return (
-                f"Your architecture diagram (ID: {event.diagram_id}) has been analyzed successfully. "
+                f"Diagram (ID: {event.diagram_id}) analyzed successfully. "
                 f"Elements detected: {elements_str}."
             )
         return (
-            f"Analysis of your architecture diagram (ID: {event.diagram_id}) failed. "
+            f"Analysis of diagram (ID: {event.diagram_id}) failed. "
             f"Error: {event.error_message}"
         )

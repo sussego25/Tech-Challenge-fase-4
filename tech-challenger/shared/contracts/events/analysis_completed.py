@@ -12,7 +12,6 @@ class AnalysisStatus(str, Enum):
 
 class ArchitectureAnalysisCompletedEvent(BaseModel):
     diagram_id: UUID
-    user_id: str
     status: AnalysisStatus
     analysis_report: str | None = None
     elements_detected: list[str] = Field(default_factory=list)

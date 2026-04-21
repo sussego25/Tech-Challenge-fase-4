@@ -73,8 +73,25 @@ module "lambda" {
   common_tags         = var.common_tags
   lambda_role_arn     = module.lambda_iam.lambda_documents_role_arn
   s3_bucket_name      = module.s3.diagrams_bucket_name
+  s3_bucket_arn       = module.s3.diagrams_bucket_arn
   sqs_queue_url       = module.sqs.architecture_analysis_queue_url
   dynamodb_table_name = module.dynamodb.diagrams_table_name
+}
+
+# -------------------------------------------------------------------
+# S3 Event Notification: aciona Lambda ao fazer upload no bucket
+# Definido aqui (e nao no modulo s3) para evitar dependencia circular
+# -------------------------------------------------------------------
+resource "aws_s3_bucket_notification" "diagrams_trigger" {
+  bucket = module.s3.diagrams_bucket_name
+
+  lambda_function {
+    lambda_function_arn = module.lambda.lambda_function_arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "diagrams/"
+  }
+
+  depends_on = [module.lambda]
 }
 
 module "worker_iam" {

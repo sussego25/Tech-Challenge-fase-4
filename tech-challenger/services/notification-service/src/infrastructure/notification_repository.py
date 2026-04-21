@@ -17,7 +17,6 @@ class NotificationRepository:
         item: dict = {
             "notification_id": str(notification.notification_id),
             "diagram_id": str(notification.diagram_id),
-            "user_id": notification.user_id,
             "message": notification.message,
             "status": notification.status.value,
             "created_at": notification.created_at.isoformat(),

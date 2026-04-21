@@ -25,7 +25,6 @@ class DynamoDBDiagramRepository:
     def save(self, diagram: ArchitectureDiagram) -> None:
         item: dict = {
             "diagram_id": str(diagram.diagram_id),
-            "user_id": diagram.user_id,
             "status": diagram.status.value,
             "s3_key": diagram.s3_key,
             "s3_bucket": diagram.s3_bucket,
@@ -46,7 +45,6 @@ class DynamoDBDiagramRepository:
 
         return ArchitectureDiagram(
             diagram_id=UUID(item["diagram_id"]),
-            user_id=item["user_id"],
             status=DiagramStatus(item["status"]),
             s3_key=item["s3_key"],
             s3_bucket=item["s3_bucket"],

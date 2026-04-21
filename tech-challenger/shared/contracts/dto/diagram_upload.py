@@ -6,7 +6,6 @@ ACCEPTED_CONTENT_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/webp"}
 
 
 class DiagramUploadRequest(BaseModel):
-    user_id: str
     file_name: str
     content_type: str
 

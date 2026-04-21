@@ -6,10 +6,10 @@
 
 O projeto é um **analisador de diagramas de arquitetura** baseado em microsserviços. O usuário envia uma imagem de diagrama via API, e o sistema analisa automaticamente os componentes usando um modelo de linguagem (LLM via SageMaker), retornando os resultados ao usuário.
 
+
 ---
 
 ## Fluxo Completo de Dados
-
 ```
 [Usuário]
     │  POST /upload (imagem + x-user-id header)

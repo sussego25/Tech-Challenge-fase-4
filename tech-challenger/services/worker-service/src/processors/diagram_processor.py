@@ -34,7 +34,6 @@ class DiagramProcessor:
             diagram.mark_completed(report, elements)
             completed_event = ArchitectureAnalysisCompletedEvent(
                 diagram_id=event.diagram_id,
-                user_id=event.user_id,
                 status=AnalysisStatus.COMPLETED,
                 analysis_report=report,
                 elements_detected=elements,
@@ -45,7 +44,6 @@ class DiagramProcessor:
             diagram.mark_failed(error_msg)
             completed_event = ArchitectureAnalysisCompletedEvent(
                 diagram_id=event.diagram_id,
-                user_id=event.user_id,
                 status=AnalysisStatus.FAILED,
                 completed_at=datetime.now(timezone.utc),
                 error_message=error_msg,
