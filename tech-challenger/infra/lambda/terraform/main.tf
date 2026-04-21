@@ -15,16 +15,13 @@ resource "null_resource" "build_lambda_package" {
   }
 
   provisioner "local-exec" {
-    interpreter = ["PowerShell", "-Command"]
+    interpreter = ["bash", "-c"]
     command     = <<-EOT
-      $buildPath = '${local.build_path}'
-      $handlerPath = '${local.handler_src_path}'
-      $sharedPath = '${local.shared_path}'
-      Remove-Item -Recurse -Force $buildPath -ErrorAction SilentlyContinue
-      New-Item -ItemType Directory -Force -Path $buildPath | Out-Null
-      Copy-Item -Recurse "$handlerPath\*" "$buildPath\"
-      Copy-Item -Recurse "$sharedPath\contracts" "$buildPath\contracts"
-      Copy-Item -Recurse "$sharedPath\libs" "$buildPath\libs"
+      rm -rf "${local.build_path}"
+      mkdir -p "${local.build_path}"
+      cp -r "${local.handler_src_path}/." "${local.build_path}/"
+      cp -r "${local.shared_path}/contracts" "${local.build_path}/contracts"
+      cp -r "${local.shared_path}/libs" "${local.build_path}/libs"
     EOT
   }
 }
