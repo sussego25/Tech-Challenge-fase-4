@@ -6,7 +6,7 @@ locals {
 }
 
 # -------------------------------------------------------------------
-# Prepara diretorio de build com handler + contracts + libs
+# Prepara diretorio de build com handler + contracts + libs + deps
 # -------------------------------------------------------------------
 resource "null_resource" "build_lambda_package" {
   triggers = {
@@ -15,15 +15,8 @@ resource "null_resource" "build_lambda_package" {
   }
 
   provisioner "local-exec" {
-    interpreter = ["bash", "-c"]
-    command     = <<-EOT
-      rm -rf "${local.build_path}"
-      mkdir -p "${local.build_path}"
-      cp -r "${local.handler_src_path}/." "${local.build_path}/"
-      cp -r "${local.shared_path}/contracts" "${local.build_path}/contracts"
-      cp -r "${local.shared_path}/libs" "${local.build_path}/libs"
-      pip install -r "${local.handler_src_path}/requirements.txt" -t "${local.build_path}" --quiet
-    EOT
+    working_dir = "${path.module}/.."
+    command     = "python build_package.py"
   }
 }
 
