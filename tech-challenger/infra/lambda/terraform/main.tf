@@ -10,13 +10,15 @@ locals {
 # -------------------------------------------------------------------
 resource "null_resource" "build_lambda_package" {
   triggers = {
-    handler_src = sha256(join("", [for f in fileset(local.handler_src_path, "**/*.py") : filesha256("${local.handler_src_path}/${f}")]))
-    shared_src  = sha256(join("", [for f in fileset(local.shared_path, "**/*.py") : filesha256("${local.shared_path}/${f}")]))
+    handler_src  = sha256(join("", [for f in fileset(local.handler_src_path, "**/*.py") : filesha256("${local.handler_src_path}/${f}")]))
+    shared_src   = sha256(join("", [for f in fileset(local.shared_path, "**/*.py") : filesha256("${local.shared_path}/${f}")]))
+    requirements = filesha256("${local.handler_src_path}/requirements.txt")
+    build_script = filesha256("${path.module}/../build_package.py")
   }
 
   provisioner "local-exec" {
     working_dir = "${path.module}/.."
-    command     = "python build_package.py"
+    command     = "python3 build_package.py"
   }
 }
 

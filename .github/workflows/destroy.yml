@@ -44,12 +44,14 @@ jobs:
       - name: Instalar Helm
         uses: azure/setup-helm@v3
 
-      - name: Obter nome do cluster EKS via Terraform state
+      - name: Obter nome do cluster EKS
         id: eks
         run: |
-          # Tenta pegar o cluster do state; se falhar, continua (cluster pode não existir)
-          CLUSTER=$(aws eks list-clusters --query 'clusters[?contains(@, `tech-challenger`)]' --output text 2>/dev/null | head -n1 || echo "")
+          CLUSTER=$(aws eks list-clusters \
+            --query 'clusters[?contains(@, `tech-challenger`)]' \
+            --output text 2>/dev/null | head -n1 || echo "")
           echo "cluster_name=$CLUSTER" >> $GITHUB_OUTPUT
+          echo "Cluster encontrado: $CLUSTER"
 
       - name: Configurar kubeconfig
         if: steps.eks.outputs.cluster_name != ''
@@ -63,8 +65,47 @@ jobs:
         run: |
           helm uninstall worker-service       --namespace ${{ env.ENVIRONMENT }} --ignore-not-found 2>/dev/null || true
           helm uninstall notification-service --namespace ${{ env.ENVIRONMENT }} --ignore-not-found 2>/dev/null || true
-          echo "Aguardando pods terminarem..."
+
+      - name: Deletar todos os Services do tipo LoadBalancer
+        # CRÍTICO: Services LoadBalancer criam ELBs fora do Terraform state.
+        # Se não forem removidos, a AWS bloqueia a deleção da VPC/subnets.
+        if: steps.eks.outputs.cluster_name != ''
+        run: |
+          echo "Removendo todos os LoadBalancer services em todos os namespaces..."
+          kubectl get svc --all-namespaces -o json | \
+            jq -r '.items[] | select(.spec.type=="LoadBalancer") | "\(.metadata.namespace) \(.metadata.name)"' | \
+            while read NS NAME; do
+              echo "  Deletando LoadBalancer: $NS/$NAME"
+              kubectl delete svc "$NAME" -n "$NS" --ignore-not-found || true
+            done
+          echo "Aguardando ELBs serem removidos pela AWS (60s)..."
+          sleep 60
+
+      - name: Deletar todos os PVCs (evita volumes EBS órfãos)
+        if: steps.eks.outputs.cluster_name != ''
+        run: |
+          kubectl delete pvc --all --all-namespaces --ignore-not-found || true
+
+      - name: Deletar todos os namespaces da aplicação
+        if: steps.eks.outputs.cluster_name != ''
+        run: |
           kubectl delete namespace ${{ env.ENVIRONMENT }} --ignore-not-found --timeout=120s || true
+
+      - name: Escalar node group para zero (acelera deleção)
+        if: steps.eks.outputs.cluster_name != ''
+        run: |
+          CLUSTER="${{ steps.eks.outputs.cluster_name }}"
+          NODE_GROUPS=$(aws eks list-nodegroups --cluster-name "$CLUSTER" \
+            --query 'nodegroups[]' --output text 2>/dev/null || echo "")
+          for NG in $NODE_GROUPS; do
+            echo "Escalando node group $NG para 0..."
+            aws eks update-nodegroup-config \
+              --cluster-name "$CLUSTER" \
+              --nodegroup-name "$NG" \
+              --scaling-config desiredSize=0,minSize=0,maxSize=1 2>/dev/null || true
+          done
+          echo "Aguardando nodes terminarem (90s)..."
+          sleep 90
 
   # Job 2 — Esvazia buckets S3 (terraform destroy falha em buckets não-vazios)
   esvaziar-s3:
@@ -150,6 +191,48 @@ jobs:
           terraform destroy \
             -auto-approve \
             -var="environment=${{ env.ENVIRONMENT }}"
+
+      - name: Fallback — forçar deleção do EKS se Terraform falhou
+        if: failure()
+        run: |
+          echo "Terraform falhou. Tentando forçar deleção do EKS via AWS CLI..."
+          CLUSTER=$(aws eks list-clusters \
+            --query 'clusters[?contains(@, `tech-challenger`)]' \
+            --output text 2>/dev/null | head -n1 || echo "")
+
+          if [ -n "$CLUSTER" ]; then
+            # Remove node groups primeiro
+            NODE_GROUPS=$(aws eks list-nodegroups --cluster-name "$CLUSTER" \
+              --query 'nodegroups[]' --output text 2>/dev/null || echo "")
+            for NG in $NODE_GROUPS; do
+              echo "Deletando node group $NG..."
+              aws eks delete-nodegroup --cluster-name "$CLUSTER" --nodegroup-name "$NG" || true
+              aws eks wait nodegroup-deleted --cluster-name "$CLUSTER" --nodegroup-name "$NG" || true
+            done
+
+            # Deleta o cluster
+            echo "Deletando cluster EKS $CLUSTER..."
+            aws eks delete-cluster --name "$CLUSTER" || true
+            aws eks wait cluster-deleted --name "$CLUSTER" || true
+            echo "✅ Cluster EKS deletado."
+          fi
+
+          # Limpa Security Groups órfãos da VPC do projeto
+          VPC_IDS=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Project,Values=tech-challenger" \
+            --query 'Vpcs[].VpcId' --output text 2>/dev/null || echo "")
+          for VPC in $VPC_IDS; do
+            SGs=$(aws ec2 describe-security-groups \
+              --filters "Name=vpc-id,Values=$VPC" \
+              --query 'SecurityGroups[?GroupName!=`default`].GroupId' \
+              --output text 2>/dev/null || echo "")
+            for SG in $SGs; do
+              aws ec2 delete-security-group --group-id "$SG" 2>/dev/null || true
+            done
+          done
+
+          echo "Tente rodar o terraform destroy manualmente ou re-triggere este workflow."
+          exit 1
 
       - name: Confirmação final
         run: echo "✅ Toda a infraestrutura foi destruída com sucesso. Cobranças AWS serão zeradas em breve."

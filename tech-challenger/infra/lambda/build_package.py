@@ -31,15 +31,12 @@ shutil.copytree(handler_src, build_dir, dirs_exist_ok=True)
 shutil.copytree(os.path.join(shared_src, "contracts"), os.path.join(build_dir, "contracts"), dirs_exist_ok=True)
 shutil.copytree(os.path.join(shared_src, "libs"),      os.path.join(build_dir, "libs"),      dirs_exist_ok=True)
 
-# Instala boto3 normalmente (pure Python, sem extensoes nativas)
-subprocess.check_call([
-    sys.executable, "-m", "pip", "install",
-    "boto3",
-    "-t", build_dir,
-    "--quiet"
-])
+# boto3/botocore NAO sao instalados aqui: o runtime Lambda Python 3.11
+# ja os fornece. Inclui-los aumentaria o zip e poderia causar conflito de versao.
 
-# Instala pydantic com wheels Linux (manylinux) pois tem extensoes nativas (pydantic_core)
+# Instala pydantic com wheels Linux/x86_64 para Python 3.11.
+# pydantic_core contem extensao Rust compilada — precisa de wheel
+# especifico para manylinux2014_x86_64 + cp311, independente do SO do runner.
 subprocess.check_call([
     sys.executable, "-m", "pip", "install",
     "pydantic>=2.0",

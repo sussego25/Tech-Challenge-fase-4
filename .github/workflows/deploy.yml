@@ -32,16 +32,10 @@ jobs:
           terraform_version: "1.5.0"  # Versão do Terraform
 
       - name: Build Lambda package
-        run: |
-          HANDLER_SRC="tech-challenger/services/lambda-functions/order-handler"
-          SHARED_SRC="tech-challenger/shared"
-          BUILD_PATH="tech-challenger/infra/lambda/terraform/build"
-          rm -rf "$BUILD_PATH"
-          mkdir -p "$BUILD_PATH"
-          cp -r "$HANDLER_SRC/." "$BUILD_PATH/"
-          cp -r "$SHARED_SRC/contracts" "$BUILD_PATH/contracts"
-          cp -r "$SHARED_SRC/libs" "$BUILD_PATH/libs"
-          pip install -r "$HANDLER_SRC/requirements.txt" -t "$BUILD_PATH" --quiet
+        # Executa build_package.py diretamente para garantir wheels corretos:
+        # - pydantic_core instalado com --platform manylinux2014_x86_64 --python-version 311
+        # - Compatível com Lambda Python 3.11 Linux x86_64
+        run: cd tech-challenger/infra/lambda && python3 build_package.py
 
       # Infra raiz: SQS + IAM por recurso
       - name: Terraform Init (Infra Root)
@@ -179,8 +173,7 @@ jobs:
             --set env.S3_BUCKET=${{ needs.deploy-infra.outputs.s3_bucket }} \
             --set env.DYNAMODB_TABLE=${{ needs.deploy-infra.outputs.dynamodb_table }} \
             --set env.KAFKA_BOOTSTRAP_SERVERS=${{ needs.deploy-infra.outputs.kafka_brokers }} \
-            --set env.KAFKA_TOPIC_ARCHITECTURE_ANALYSIS=architecture-analysis \
-            --set env.KAFKA_GROUP_ID=worker-service \
+            --set env.KAFKA_TOPIC_ANALYSIS_COMPLETED=analysis-completed \
             --wait --timeout 5m
 
       - name: Deploy notification-service via Helm
@@ -194,6 +187,7 @@ jobs:
             --create-namespace \
             --set image.repository=$ECR_REGISTRY/notification-service \
             --set image.tag=$IMAGE_TAG \
+            --set env.AWS_REGION=${{ env.AWS_REGION }} \
             --set env.AWS_REGION=${{ env.AWS_REGION }} \
             --set env.KAFKA_BOOTSTRAP_SERVERS=${{ needs.deploy-infra.outputs.kafka_brokers }} \
             --set env.KAFKA_TOPIC_ANALYSIS_COMPLETED=analysis-completed \
