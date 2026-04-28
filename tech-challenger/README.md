@@ -20,3 +20,5 @@ Arquitetura de microsserviços com múltiplos canais de mensageria (Kafka e SQS)
 
 - [Arquitetura](docs/arquitetura.md)
 - [Decisões de Design](docs/decisoes.md)
+
+
