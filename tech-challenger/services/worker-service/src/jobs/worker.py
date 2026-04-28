@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     settings = Settings()
 
+    if not settings.SQS_QUEUE_URL:
+        raise RuntimeError("SQS_QUEUE_URL env var is not set — cannot start worker")
+    if not settings.KAFKA_BOOTSTRAP_SERVERS:
+        raise RuntimeError("KAFKA_BOOTSTRAP_SERVERS env var is not set — cannot start worker")
+
     s3_client = S3Client(bucket_name=settings.S3_BUCKET, region=settings.AWS_REGION)
     sqs_client = SQSClient(queue_url=settings.SQS_QUEUE_URL, region=settings.AWS_REGION)
     kafka_producer = KafkaProducer(bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS)

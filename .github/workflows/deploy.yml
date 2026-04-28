@@ -97,7 +97,20 @@ jobs:
           echo "sqs_queue_url=$(terraform output -raw architecture_analysis_queue_url)" >> $GITHUB_OUTPUT
           echo "s3_bucket=$(terraform output -raw diagrams_bucket_name)" >> $GITHUB_OUTPUT
           echo "dynamodb_table=$(terraform output -raw diagrams_table_name)" >> $GITHUB_OUTPUT
-          echo "kafka_brokers=$(terraform output -raw kafka_bootstrap_brokers)" >> $GITHUB_OUTPUT
+
+          # kafka_bootstrap_brokers pode retornar "null" quando o MSK ainda está provisionando.
+          # Fallback: consulta a AWS diretamente para garantir o valor correto.
+          KAFKA_BROKERS=$(terraform output -raw kafka_bootstrap_brokers 2>/dev/null || echo "")
+          if [ -z "$KAFKA_BROKERS" ] || [ "$KAFKA_BROKERS" = "null" ]; then
+            echo "⚠️  terraform output kafka_bootstrap_brokers vazio, buscando via AWS CLI..."
+            CLUSTER_ARN=$(aws kafka list-clusters --region $AWS_REGION \
+              --query "ClusterInfoList[?ClusterName=='tech-challenger-kafka-$ENVIRONMENT'].ClusterArn" \
+              --output text)
+            KAFKA_BROKERS=$(aws kafka get-bootstrap-brokers \
+              --cluster-arn "$CLUSTER_ARN" --region $AWS_REGION \
+              --query "BootstrapBrokerString" --output text)
+          fi
+          echo "kafka_brokers=$KAFKA_BROKERS" >> $GITHUB_OUTPUT
 
     outputs:
       eks_cluster_name: ${{ steps.tf-outputs.outputs.eks_cluster_name }}

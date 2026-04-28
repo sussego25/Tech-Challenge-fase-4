@@ -1,10 +1,13 @@
 import logging
+import time
 
 from contracts.events.analysis_requested import ArchitectureAnalysisRequestedEvent
 from libs.aws.sqs_client import SQSClient, SQSMessage
 from processors.diagram_processor import DiagramProcessor
 
 logger = logging.getLogger(__name__)
+
+_POLL_ERROR_BACKOFF_SECONDS = 5
 
 
 class SQSConsumer:
@@ -15,7 +18,15 @@ class SQSConsumer:
     def run(self) -> None:
         logger.info("Worker started. Polling SQS...")
         while True:
-            self._process_batch()
+            try:
+                self._process_batch()
+            except Exception as exc:
+                logger.exception(
+                    "Error polling SQS, retrying in %ds: %s",
+                    _POLL_ERROR_BACKOFF_SECONDS,
+                    exc,
+                )
+                time.sleep(_POLL_ERROR_BACKOFF_SECONDS)
 
     def _process_batch(self) -> None:
         messages: list[SQSMessage] = self._sqs.receive_messages(max_messages=10)
