@@ -223,20 +223,32 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
+          SQS_QUEUE_URL: ${{ needs.deploy-infra.outputs.sqs_queue_url }}
+          S3_BUCKET: ${{ needs.deploy-infra.outputs.s3_bucket }}
+          DYNAMODB_TABLE: ${{ needs.deploy-infra.outputs.dynamodb_table }}
+          KAFKA_BROKERS: ${{ needs.deploy-infra.outputs.kafka_brokers }}
+          WORKER_ROLE_ARN: ${{ needs.deploy-infra.outputs.worker_role_arn }}
         run: |
+          # Escreve override em arquivo para evitar problemas com caracteres especiais
+          # no --set (virgula no KAFKA e barra no SQS_QUEUE_URL quebram o parsing do Helm)
+          cat > /tmp/worker-values-override.yaml << EOF
+          env:
+            AWS_REGION: "${AWS_REGION}"
+            SQS_QUEUE_URL: "${SQS_QUEUE_URL}"
+            S3_BUCKET: "${S3_BUCKET}"
+            DYNAMODB_TABLE: "${DYNAMODB_TABLE}"
+            KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_BROKERS}"
+            KAFKA_TOPIC_ANALYSIS_COMPLETED: "analysis-completed"
+          EOF
+
           helm upgrade --install worker-service \
             tech-challenger/infra/eks/helm-charts/worker-service \
             --namespace ${{ env.ENVIRONMENT }} \
             --create-namespace \
+            -f /tmp/worker-values-override.yaml \
             --set image.repository=$ECR_REGISTRY/worker-service \
             --set image.tag=$IMAGE_TAG \
-            --set "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=${{ needs.deploy-infra.outputs.worker_role_arn }}" \
-            --set env.AWS_REGION=${{ env.AWS_REGION }} \
-            --set env.SQS_QUEUE_URL=${{ needs.deploy-infra.outputs.sqs_queue_url }} \
-            --set env.S3_BUCKET=${{ needs.deploy-infra.outputs.s3_bucket }} \
-            --set env.DYNAMODB_TABLE=${{ needs.deploy-infra.outputs.dynamodb_table }} \
-            --set env.KAFKA_BOOTSTRAP_SERVERS=${{ needs.deploy-infra.outputs.kafka_brokers }} \
-            --set env.KAFKA_TOPIC_ANALYSIS_COMPLETED=analysis-completed \
+            --set "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=${WORKER_ROLE_ARN}" \
             --wait --timeout 5m
 
       - name: Deploy notification-service via Helm
