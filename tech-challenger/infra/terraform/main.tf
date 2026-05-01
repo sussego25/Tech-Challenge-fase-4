@@ -150,6 +150,7 @@ module "sagemaker" {
   common_tags            = var.common_tags
   s3_diagrams_bucket_arn = module.s3.diagrams_bucket_arn
   model_container_image  = var.sagemaker_model_container_image
+  model_data_url         = var.sagemaker_model_data_url
   hf_model_id            = var.sagemaker_hf_model_id
   instance_type          = var.sagemaker_instance_type
   instance_count         = var.sagemaker_instance_count

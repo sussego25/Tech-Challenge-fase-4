@@ -58,12 +58,14 @@ resource "aws_sagemaker_model" "llm" {
   primary_container {
     image = var.model_container_image
 
-    environment = {
+    model_data_url = var.model_data_url != "" ? var.model_data_url : null
+
+    environment = var.hf_model_id != "" ? {
       HF_MODEL_ID      = var.hf_model_id
       HF_TASK          = "text-generation"
       MAX_INPUT_LENGTH = "4096"
       MAX_TOTAL_TOKENS = "8192"
-    }
+    } : {}
   }
 
   tags = var.common_tags

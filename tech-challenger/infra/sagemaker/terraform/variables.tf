@@ -25,13 +25,19 @@ variable "s3_diagrams_bucket_arn" {
 }
 
 variable "model_container_image" {
-  description = "URI da imagem de container do modelo LLM (HuggingFace TGI ou similar)"
+  description = "URI da imagem de container do modelo no ECR ou outro registro compatível"
   type        = string
   # Exemplo: 763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-tgi-inference:2.1.1-tgi1.4.0-gpu-py310-cu121-ubuntu22.04
 }
 
+variable "model_data_url" {
+  description = "URI do artefato do modelo em S3 (model.tar.gz) para SageMaker custom model"
+  type        = string
+  default     = ""
+}
+
 variable "hf_model_id" {
-  description = "HuggingFace model ID a ser carregado no endpoint"
+  description = "HuggingFace model ID a ser carregado no endpoint, se aplicável"
   type        = string
   default     = "mistralai/Mistral-7B-Instruct-v0.2"
 }

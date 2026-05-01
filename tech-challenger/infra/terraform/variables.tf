@@ -149,6 +149,12 @@ variable "sagemaker_model_container_image" {
   default     = ""
 }
 
+variable "sagemaker_model_data_url" {
+  description = "URI do artefato do modelo em S3 (model.tar.gz) para SageMaker custom model"
+  type        = string
+  default     = ""
+}
+
 variable "sagemaker_hf_model_id" {
   description = "HuggingFace model ID para o endpoint SageMaker"
   type        = string
