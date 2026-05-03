@@ -27,6 +27,9 @@ jobs:
     outputs:
       should_destroy: ${{ steps.set.outputs.should_destroy }}
     steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
       - name: Verificar confirmação
         id: set
         run: |
