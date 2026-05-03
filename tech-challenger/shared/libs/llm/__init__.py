@@ -1,4 +1,4 @@
-from libs.llm.sagemaker_client import LLMClient
+from libs.llm.llm_client import LLMClient
 from libs.llm.exceptions import LLMInvokeError, LLMResponseParseError
 
 __all__ = [

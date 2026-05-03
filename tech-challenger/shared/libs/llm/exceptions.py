@@ -1,6 +1,6 @@
 class LLMInvokeError(Exception):
-    """Raised when the SageMaker endpoint invocation fails."""
+    """Raised when the LLM invocation fails."""
 
 
 class LLMResponseParseError(Exception):
-    """Raised when the SageMaker response cannot be parsed."""
+    """Raised when the LLM response cannot be parsed."""

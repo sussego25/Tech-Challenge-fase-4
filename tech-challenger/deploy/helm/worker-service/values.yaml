@@ -21,7 +21,9 @@ env:
   DYNAMODB_TABLE: "tech-challenger-diagrams-prod"
   KAFKA_BOOTSTRAP_SERVERS: "b-2.techchallengerkafkapr.2fte6w.c23.kafka.us-east-1.amazonaws.com:9092,b-1.techchallengerkafkapr.2fte6w.c23.kafka.us-east-1.amazonaws.com:9092"
   KAFKA_TOPIC_ANALYSIS_COMPLETED: "analysis-completed"
+  LLM_PROVIDER: "bedrock"
   SAGEMAKER_ENDPOINT: ""
+  BEDROCK_MODEL_ID: "amazon.titan-text-lite"
 
 # Nome de um Secret existente com variaveis sensiveis (opcional)
 existingSecretName: ""

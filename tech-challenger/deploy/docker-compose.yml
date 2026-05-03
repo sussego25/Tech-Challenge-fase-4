@@ -69,7 +69,9 @@ services:
       DYNAMODB_TABLE: tech-challenger-diagrams-dev
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_TOPIC_ANALYSIS_COMPLETED: analysis-completed
+      LLM_PROVIDER: "bedrock"
       SAGEMAKER_ENDPOINT: ""
+      BEDROCK_MODEL_ID: "amazon.titan-text-lite"
       AWS_REGION: us-east-1
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test

@@ -9,5 +9,7 @@ class Settings:
     KAFKA_TOPIC_ANALYSIS_COMPLETED: str = os.environ.get(
         "KAFKA_TOPIC_ANALYSIS_COMPLETED", "analysis-completed"
     )
-    # TODO: adicionar SAGEMAKER_ENDPOINT quando integrar YOLO + LLM
+    LLM_PROVIDER: str = os.environ.get("LLM_PROVIDER", "sagemaker").lower()
+    SAGEMAKER_ENDPOINT: str = os.environ.get("SAGEMAKER_ENDPOINT", "")
+    BEDROCK_MODEL_ID: str = os.environ.get("BEDROCK_MODEL_ID", "")
     AWS_REGION: str = os.environ.get("AWS_REGION", "us-east-1")

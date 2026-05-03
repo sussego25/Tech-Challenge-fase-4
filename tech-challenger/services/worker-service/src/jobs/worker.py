@@ -9,6 +9,7 @@ from infrastructure.diagram_repository import DynamoDBDiagramRepository
 from infrastructure.kafka_publisher import KafkaPublisher
 from libs.aws.s3_client import S3Client
 from libs.aws.sqs_client import SQSClient
+from libs.llm import LLMClient
 from libs.messaging.kafka_producer import KafkaProducer
 from processors.diagram_processor import DiagramProcessor
 
@@ -36,7 +37,29 @@ def main() -> None:
         producer=kafka_producer,
         topic=settings.KAFKA_TOPIC_ANALYSIS_COMPLETED,
     )
-    analysis_service = AnalysisService()
+
+    if settings.LLM_PROVIDER == "sagemaker":
+        if not settings.SAGEMAKER_ENDPOINT:
+            raise RuntimeError(
+                "SAGEMAKER_ENDPOINT env var is not set — cannot start worker"
+            )
+    elif settings.LLM_PROVIDER == "bedrock":
+        if not settings.BEDROCK_MODEL_ID:
+            raise RuntimeError(
+                "BEDROCK_MODEL_ID env var is not set — cannot start worker"
+            )
+    else:
+        raise RuntimeError(
+            "LLM_PROVIDER env var must be either 'sagemaker' or 'bedrock'"
+        )
+
+    llm_client = LLMClient(
+        provider=settings.LLM_PROVIDER,
+        endpoint_name=settings.SAGEMAKER_ENDPOINT,
+        model_id=settings.BEDROCK_MODEL_ID,
+        region=settings.AWS_REGION,
+    )
+    analysis_service = AnalysisService(llm_client=llm_client)
     processor = DiagramProcessor(
         s3_client=s3_client,
         analysis_service=analysis_service,

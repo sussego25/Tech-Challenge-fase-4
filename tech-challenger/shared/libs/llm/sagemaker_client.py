@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 from libs.llm.exceptions import LLMInvokeError
 
 
-class LLMClient:
+class SageMakerClient:
     def __init__(
         self,
         endpoint_name: str | None,
