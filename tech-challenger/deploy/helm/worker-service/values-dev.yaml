@@ -1,0 +1,52 @@
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: "<ECR_REGISTRY>/worker-service"
+  tag: latest
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  name: "worker-service"
+  annotations:
+    eks.amazonaws.com/role-arn: "<WORKER_SERVICE_IRSA_ROLE_ARN>"
+
+env:
+  AWS_REGION: us-east-1
+  SQS_QUEUE_URL: "<SQS_QUEUE_URL>"
+  DYNAMODB_TABLE: "<DYNAMODB_TABLE>"
+  KAFKA_BOOTSTRAP_SERVERS: "<KAFKA_BOOTSTRAP_SERVERS>"
+  KAFKA_TOPIC_ANALYSIS_COMPLETED: "analysis-completed"
+  LLM_PROVIDER: "bedrock"
+  SAGEMAKER_ENDPOINT: ""
+  BEDROCK_MODEL_ID: "amazon.titan-text-lite"
+
+existingSecretName: ""
+secretEnv: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+livenessProbe:
+  enabled: false
+
+readinessProbe:
+  enabled: false

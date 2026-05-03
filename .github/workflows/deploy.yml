@@ -127,13 +127,6 @@ jobs:
       - name: Checkout Tech-Challenge-fase-4 repo
         uses: actions/checkout@v4
 
-      - name: Checkout YOLO model repo
-        uses: actions/checkout@v4
-        with:
-          repository: caioomoreira/yolo-aws-solution-diagram-component-detect
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: yolo-aws-solution-diagram-component-detect
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -141,7 +134,7 @@ jobs:
 
       - name: Package YOLO model
         run: |
-          cd yolo-aws-solution-diagram-component-detect
+          cd yolo-model
           python package_model.py
 
       - name: Configure AWS credentials
@@ -153,7 +146,7 @@ jobs:
 
       - name: Upload YOLO model artifact to S3
         run: |
-          aws s3 cp yolo-aws-solution-diagram-component-detect/model.tar.gz "s3://${{ needs.deploy-infra.outputs.s3_bucket }}/yolo/model.tar.gz"
+          aws s3 cp yolo-model/model.tar.gz "s3://${{ needs.deploy-infra.outputs.s3_bucket }}/yolo/model.tar.gz"
 
   # Job 2: Deploy dos Serviços (Docker → ECR → Helm no EKS)
   deploy-services:

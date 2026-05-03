@@ -217,7 +217,35 @@ terraform destroy
 | `DYNAMODB_TABLE` | Nome da tabela DynamoDB de diagramas |
 | `KAFKA_BOOTSTRAP_SERVERS` | Endereço dos brokers Kafka/MSK |
 | `KAFKA_TOPIC_ANALYSIS_COMPLETED` | Tópico Kafka de resultados (padrão: `analysis-completed`) |
+| `LLM_PROVIDER` | Provedor de LLM: `sagemaker` ou `bedrock` |
+| `SAGEMAKER_ENDPOINT` | Nome do endpoint SageMaker (usado com `LLM_PROVIDER=sagemaker`) |
+| `BEDROCK_MODEL_ID` | Modelo Bedrock (usado com `LLM_PROVIDER=bedrock`) |
 | `AWS_REGION` | Região AWS (padrão: `us-east-1`) |
+
+### Destruição segura da infraestrutura
+
+O repo já contém um workflow para destruir tudo: `.github/workflows/destroy.yml`.
+
+Esse workflow exige dois inputs:
+- `destroy: true`
+- `confirmation: DESTRUIR`
+
+No GitHub Actions UI, escolha o workflow `Destroy Infrastructure (DESTRUIR TUDO)` e defina:
+- `destroy` = `true`
+- `confirmation` = `DESTRUIR`
+
+Se preferir rodar localmente, use o script na raiz:
+
+```powershell
+.\destroy-all.ps1
+```
+
+Ele faz:
+- confirmação manual (`DESTRUIR`)
+- `terraform init`
+- `terraform destroy -auto-approve -var="environment=prod"`
+
+> Mantenha qualquer bucket de estado remoto fora da destruição automática para não perder o histórico de estado se quiser redeploy depois.
 
 ### notification-service
 
