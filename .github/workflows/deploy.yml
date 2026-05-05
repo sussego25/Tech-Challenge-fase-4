@@ -283,16 +283,24 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
+          KAFKA_BROKERS: ${{ needs.deploy-infra.outputs.kafka_brokers }}
+          DYNAMODB_TABLE: ${{ needs.deploy-infra.outputs.dynamodb_table }}
         run: |
+          # Criando arquivo de override para evitar que as vírgulas do Kafka quebrem o Helm
+          cat > /tmp/notification-values-override.yaml << EOF
+          env:
+            AWS_REGION: "${{ env.AWS_REGION }}"
+            KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_BROKERS}"
+            KAFKA_TOPIC_ANALYSIS_COMPLETED: "analysis-completed"
+            KAFKA_GROUP_ID: "notification-service"
+            DYNAMODB_TABLE: "${DYNAMODB_TABLE}"
+          EOF
+
           helm upgrade --install notification-service \
             tech-challenger/infra/eks/helm-charts/notification-service \
             --namespace ${{ env.ENVIRONMENT }} \
             --create-namespace \
+            -f /tmp/notification-values-override.yaml \
             --set image.repository=$ECR_REGISTRY/notification-service \
             --set image.tag=$IMAGE_TAG \
-            --set env.AWS_REGION=${{ env.AWS_REGION }} \
-            --set env.KAFKA_BOOTSTRAP_SERVERS=${{ needs.deploy-infra.outputs.kafka_brokers }} \
-            --set env.KAFKA_TOPIC_ANALYSIS_COMPLETED=analysis-completed \
-            --set env.KAFKA_GROUP_ID=notification-service \
-            --set env.DYNAMODB_TABLE=${{ needs.deploy-infra.outputs.dynamodb_table }} \
             --wait --timeout 5m
