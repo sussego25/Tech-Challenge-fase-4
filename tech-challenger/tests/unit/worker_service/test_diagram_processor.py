@@ -79,7 +79,7 @@ class TestDiagramProcessorSuccess:
 
     def test_downloads_image_from_s3(self, processor, mock_s3, event):
         processor.process(event)
-        mock_s3.download_file.assert_called_once_with(S3_KEY)
+        mock_s3.download_file.assert_called_once_with(S3_KEY, bucket=S3_BUCKET)
 
     def test_invokes_analysis_service(self, processor, mock_analysis, event):
         processor.process(event)

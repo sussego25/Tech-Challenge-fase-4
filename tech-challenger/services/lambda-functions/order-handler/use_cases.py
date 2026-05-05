@@ -31,8 +31,7 @@ class ProcessDiagramUploadUseCase:
             s3_key=s3_key,
             requested_at=datetime.now(timezone.utc),
         )
-        self._sqs.send_message(event)
-
         self._repo.save(diagram)
+        self._sqs.send_message(event)
 
         return diagram
