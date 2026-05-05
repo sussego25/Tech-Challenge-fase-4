@@ -93,6 +93,11 @@ jobs:
         id: login-ecr-infra
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Login no AWS Deep Learning Containers ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin 763104351884.dkr.ecr.us-east-1.amazonaws.com
+
       - name: Build e Push YOLO inference para ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr-infra.outputs.registry }}
