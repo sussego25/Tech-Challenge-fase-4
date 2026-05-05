@@ -4,6 +4,7 @@ import os
 from typing import Any
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 
@@ -20,6 +21,11 @@ class YoloDetector:
         self._client = boto_client or boto3.client(
             "sagemaker-runtime",
             region_name=region or os.getenv("AWS_REGION"),
+            config=Config(
+                connect_timeout=5,
+                read_timeout=70,
+                retries={"max_attempts": 1},
+            ),
         )
 
     def detect_components(self, image_data: bytes) -> list[str]:

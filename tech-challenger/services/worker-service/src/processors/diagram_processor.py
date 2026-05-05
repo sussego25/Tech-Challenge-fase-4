@@ -39,6 +39,12 @@ class DiagramProcessor:
         try:
             image_data = self._s3.download_file(event.s3_key, bucket=event.s3_bucket)
             yolo_components = self._get_yolo_components(event, image_data)
+            logger.info(
+                "YOLO detection finished: diagram_id=%s components=%s",
+                event.diagram_id,
+                yolo_components,
+            )
+            logger.info("Starting LLM analysis: diagram_id=%s", event.diagram_id)
             report, elements = self._analysis.analyze(
                 image_data,
                 str(event.diagram_id),
@@ -76,7 +82,16 @@ class DiagramProcessor:
         if self._yolo is None:
             return []
 
-        return self._yolo.detect_components(image_data)
+        try:
+            logger.info("Starting YOLO detection: diagram_id=%s", event.diagram_id)
+            return self._yolo.detect_components(image_data)
+        except Exception as exc:
+            logger.exception(
+                "YOLO detection failed; continuing without detected components: diagram_id=%s error=%s",
+                event.diagram_id,
+                exc,
+            )
+            return []
 
     def _parse_yolo_components(self, raw_components: str) -> list[str]:
         try:

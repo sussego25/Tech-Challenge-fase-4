@@ -7,11 +7,19 @@ from typing import Any, Dict
 from PIL import Image
 from ultralytics import YOLO
 
+MAX_IMAGE_SIZE = (640, 640)
+
 
 def model_fn(model_dir: str) -> YOLO:
     model_path = os.path.join(model_dir, "modelo_arquitetura_fiap3.pt")
     model = YOLO(model_path)
     return model
+
+
+def _prepare_image(image: Image.Image) -> Image.Image:
+    image = image.convert("RGB")
+    image.thumbnail(MAX_IMAGE_SIZE)
+    return image
 
 
 def input_fn(serialized_input_data: bytes, content_type: str) -> Image.Image:
@@ -21,10 +29,10 @@ def input_fn(serialized_input_data: bytes, content_type: str) -> Image.Image:
         if not image_b64:
             raise ValueError("JSON payload deve conter 'image_data' ou 'image'")
         image_bytes = base64.b64decode(image_b64)
-        return Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        return _prepare_image(Image.open(io.BytesIO(image_bytes)))
 
     if content_type.startswith("image/"):
-        return Image.open(io.BytesIO(serialized_input_data)).convert("RGB")
+        return _prepare_image(Image.open(io.BytesIO(serialized_input_data)))
 
     raise ValueError(
         f"Content type '{content_type}' não suportado. Use 'image/png', 'image/jpeg' ou 'application/json'."
