@@ -1,4 +1,5 @@
 import json
+import logging
 
 from contracts.entities.architecture_diagram import ArchitectureDiagram
 from contracts.events.analysis_requested import ArchitectureAnalysisRequestedEvent
@@ -6,6 +7,8 @@ from domain.analysis_service import AnalysisService
 from infrastructure.diagram_repository import DynamoDBDiagramRepository
 from infrastructure.yolo_detector import YoloDetector
 from libs.aws.s3_client import S3Client
+
+logger = logging.getLogger(__name__)
 
 
 class DiagramProcessor:
@@ -22,6 +25,12 @@ class DiagramProcessor:
         self._yolo = yolo_detector
 
     def process(self, event: ArchitectureAnalysisRequestedEvent) -> None:
+        logger.info(
+            "Processing diagram analysis: diagram_id=%s bucket=%s key=%s",
+            event.diagram_id,
+            event.s3_bucket,
+            event.s3_key,
+        )
         diagram: ArchitectureDiagram = self._repo.get(str(event.diagram_id))
 
         diagram.mark_processing()
@@ -38,9 +47,21 @@ class DiagramProcessor:
             diagram.mark_completed(report, elements or yolo_components)
         except Exception as exc:
             error_msg = str(exc)
+            logger.exception(
+                "Failed to process diagram analysis: diagram_id=%s bucket=%s key=%s error=%s",
+                event.diagram_id,
+                event.s3_bucket,
+                event.s3_key,
+                error_msg,
+            )
             diagram.mark_failed(error_msg)
 
         self._repo.save(diagram)
+        logger.info(
+            "Finished diagram analysis: diagram_id=%s status=%s",
+            diagram.diagram_id,
+            diagram.status.value,
+        )
 
     def _get_yolo_components(
         self,

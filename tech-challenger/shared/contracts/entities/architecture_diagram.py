@@ -28,6 +28,7 @@ class ArchitectureDiagram(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     analysis_report: str | None = None
+    error_message: str | None = None
     elements_detected: list[str] = Field(default_factory=list)
 
     model_config = {"arbitrary_types_allowed": True}
@@ -48,9 +49,11 @@ class ArchitectureDiagram(BaseModel):
             raise ValueError("analysis_report cannot be empty when marking as completed")
         self._transition_to(DiagramStatus.COMPLETED)
         self.analysis_report = report
+        self.error_message = None
         self.elements_detected = elements
 
     def mark_failed(self, error: str) -> None:
         self._transition_to(DiagramStatus.FAILED)
         self.analysis_report = None
+        self.error_message = error
         self.elements_detected = []

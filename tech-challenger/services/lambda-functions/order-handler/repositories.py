@@ -34,6 +34,8 @@ class DynamoDBDiagramRepository:
         }
         if diagram.analysis_report:
             item["analysis_report"] = diagram.analysis_report
+        if diagram.error_message:
+            item["error_message"] = diagram.error_message
 
         self._table.put_item(Item=item)
 
@@ -51,5 +53,6 @@ class DynamoDBDiagramRepository:
             created_at=datetime.fromisoformat(item["created_at"]),
             updated_at=datetime.fromisoformat(item["updated_at"]),
             analysis_report=item.get("analysis_report"),
+            error_message=item.get("error_message"),
             elements_detected=item.get("elements_detected", []),
         )

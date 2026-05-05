@@ -38,9 +38,22 @@ def lambda_handler(event: dict[str, Any], context: Any) -> None:
 
         s3_client = boto3.client("s3")
         try:
-            s3_client.head_object(Bucket=bucket_name, Key=s3_key)
+            object_info = s3_client.head_object(Bucket=bucket_name, Key=s3_key)
         except Exception:
             logger.exception("Failed to verify object %s/%s", bucket_name, s3_key)
+            raise
+
+        content_length = object_info.get("ContentLength", 0)
+        content_type = object_info.get("ContentType", "")
+        if s3_key.endswith("/") or content_length == 0 or not content_type.startswith("image/"):
+            logger.info(
+                "Ignoring non-image S3 object: bucket=%s key=%s content_type=%s content_length=%s",
+                bucket_name,
+                s3_key,
+                content_type,
+                content_length,
+            )
+            continue
 
         try:
             use_case = _get_use_case()
