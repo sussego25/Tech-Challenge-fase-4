@@ -182,7 +182,7 @@ variable "enable_yolo_sagemaker" {
 variable "yolo_sagemaker_model_container_image" {
   description = "URI da imagem de inferencia PyTorch/SageMaker usada pelo modelo YOLO"
   type        = string
-  default     = "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.1.0-cpu-py310-ubuntu20.04-sagemaker"
+  default     = ""
 }
 
 variable "yolo_sagemaker_model_data_url" {
@@ -260,7 +260,7 @@ variable "kafka_allowed_cidr_blocks" {
 variable "ecr_repository_names" {
   description = "Lista de nomes de repositorios ECR a criar"
   type        = list(string)
-  default     = ["worker-service", "notification-service"]
+  default     = ["worker-service", "notification-service", "yolo-inference"]
 }
 
 variable "ecr_image_retention_count" {

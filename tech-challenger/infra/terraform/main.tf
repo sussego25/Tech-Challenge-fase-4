@@ -26,6 +26,14 @@ provider "aws" {
   region = var.aws_region
 }
 
+locals {
+  yolo_sagemaker_model_container_image = (
+    var.yolo_sagemaker_model_container_image != ""
+    ? var.yolo_sagemaker_model_container_image
+    : "${module.ecr.repository_urls["yolo-inference"]}:latest"
+  )
+}
+
 module "sqs" {
   source = "../sqs/terraform"
 
@@ -164,7 +172,7 @@ module "yolo_sagemaker" {
   project_name           = var.project_name
   common_tags            = var.common_tags
   s3_diagrams_bucket_arn = module.s3.diagrams_bucket_arn
-  model_container_image  = var.yolo_sagemaker_model_container_image
+  model_container_image  = local.yolo_sagemaker_model_container_image
   model_data_url         = var.yolo_sagemaker_model_data_url
   instance_type          = var.yolo_sagemaker_instance_type
   instance_count         = var.yolo_sagemaker_instance_count
