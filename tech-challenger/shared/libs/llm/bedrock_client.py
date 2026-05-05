@@ -1,4 +1,3 @@
-import json
 import os
 from typing import Any
 
@@ -24,45 +23,31 @@ class BedrockClient:
         )
 
     def invoke(self, prompt: str) -> str:
-        body = json.dumps(
-            {
-                "inputText": prompt,
-                "textGenerationConfig": {
-                    "maxTokenCount": 2048,
+        try:
+            response = self._client.converse(
+                modelId=self._model_id,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [{"text": prompt}],
+                    }
+                ],
+                inferenceConfig={
+                    "maxTokens": 2048,
                     "temperature": 0.2,
                     "topP": 0.9,
                 },
-            }
-        ).encode()
-        try:
-            response = self._client.invoke_model(
-                modelId=self._model_id,
-                contentType="application/json",
-                accept="application/json",
-                body=body,
             )
         except ClientError as e:
             raise LLMInvokeError(f"Failed to invoke Bedrock model '{self._model_id}': {e}") from e
 
-        raw_body = response["body"]
-        raw = raw_body.read() if hasattr(raw_body, "read") else raw_body
-        text = raw.decode("utf-8") if isinstance(raw, bytes) else raw
-
-        try:
-            parsed = json.loads(text)
-            if isinstance(parsed, dict):
-                results = parsed.get("results")
-                if (
-                    isinstance(results, list)
-                    and results
-                    and isinstance(results[0], dict)
-                    and "outputText" in results[0]
-                ):
-                    return results[0]["outputText"]
-                if "generated_text" in parsed:
-                    return parsed["generated_text"]
-                if "output" in parsed:
-                    return parsed["output"]
-            return text
-        except json.JSONDecodeError:
-            return text
+        content = (
+            response.get("output", {})
+            .get("message", {})
+            .get("content", [])
+        )
+        return "".join(
+            block.get("text", "")
+            for block in content
+            if isinstance(block, dict)
+        )

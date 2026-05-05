@@ -54,9 +54,12 @@ class TestLLMClientInvoke:
         assert result == "# Architecture Report\n\nLooks great."
 
     def test_bedrock_invoke_returns_generated_text(self, bedrock_llm, mock_boto_client):
-        response_body = json.dumps({"generated_text": "# Architecture Report\n\nLooks great."})
-        mock_boto_client.invoke_model.return_value = {
-            "body": MagicMock(read=MagicMock(return_value=response_body.encode()))
+        mock_boto_client.converse.return_value = {
+            "output": {
+                "message": {
+                    "content": [{"text": "# Architecture Report\n\nLooks great."}]
+                }
+            }
         }
         result = bedrock_llm.invoke("Analyze this diagram with elements: EC2, RDS")
         assert result == "# Architecture Report\n\nLooks great."
@@ -73,22 +76,23 @@ class TestLLMClientInvoke:
         )
 
     def test_bedrock_invoke_calls_model_with_correct_params(self, bedrock_llm, mock_boto_client):
-        mock_boto_client.invoke_model.return_value = {
-            "body": MagicMock(read=MagicMock(return_value=b"report"))
+        mock_boto_client.converse.return_value = {
+            "output": {"message": {"content": [{"text": "report"}]}}
         }
         bedrock_llm.invoke("my prompt")
-        mock_boto_client.invoke_model.assert_called_once_with(
+        mock_boto_client.converse.assert_called_once_with(
             modelId="my-bedrock-model",
-            contentType="application/json",
-            accept="application/json",
-            body=json.dumps({
-                "inputText": "my prompt",
-                "textGenerationConfig": {
-                    "maxTokenCount": 2048,
-                    "temperature": 0.2,
-                    "topP": 0.9,
-                },
-            }).encode(),
+            messages=[
+                {
+                    "role": "user",
+                    "content": [{"text": "my prompt"}],
+                }
+            ],
+            inferenceConfig={
+                "maxTokens": 2048,
+                "temperature": 0.2,
+                "topP": 0.9,
+            },
         )
 
     def test_invoke_accepts_plain_text_response(self, sagemaker_llm, mock_boto_client):

@@ -30,6 +30,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.5.0"  # Versão do Terraform
+          terraform_wrapper: false
 
       - name: Build Lambda package
         # Executa build_package.py diretamente para garantir wheels corretos:
@@ -97,20 +98,7 @@ jobs:
           echo "sqs_queue_url=$(terraform output -raw architecture_analysis_queue_url)" >> $GITHUB_OUTPUT
           echo "s3_bucket=$(terraform output -raw diagrams_bucket_name)" >> $GITHUB_OUTPUT
           echo "dynamodb_table=$(terraform output -raw diagrams_table_name)" >> $GITHUB_OUTPUT
-
-          # kafka_bootstrap_brokers pode retornar "null" quando o MSK ainda está provisionando.
-          # Fallback: consulta a AWS diretamente para garantir o valor correto.
-          KAFKA_BROKERS=$(terraform output -raw kafka_bootstrap_brokers 2>/dev/null || echo "")
-          if [ -z "$KAFKA_BROKERS" ] || [ "$KAFKA_BROKERS" = "null" ]; then
-            echo "⚠️  terraform output kafka_bootstrap_brokers vazio, buscando via AWS CLI..."
-            CLUSTER_ARN=$(aws kafka list-clusters --region $AWS_REGION \
-              --query "ClusterInfoList[?ClusterName=='tech-challenger-kafka-$ENVIRONMENT'].ClusterArn" \
-              --output text)
-            KAFKA_BROKERS=$(aws kafka get-bootstrap-brokers \
-              --cluster-arn "$CLUSTER_ARN" --region $AWS_REGION \
-              --query "BootstrapBrokerString" --output text)
-          fi
-          echo "kafka_brokers=$KAFKA_BROKERS" >> $GITHUB_OUTPUT
+          echo "yolo_sagemaker_endpoint=$(terraform output -raw yolo_sagemaker_endpoint_name)" >> $GITHUB_OUTPUT
 
     outputs:
       eks_cluster_name: ${{ steps.tf-outputs.outputs.eks_cluster_name }}
@@ -118,7 +106,7 @@ jobs:
       sqs_queue_url: ${{ steps.tf-outputs.outputs.sqs_queue_url }}
       s3_bucket: ${{ steps.tf-outputs.outputs.s3_bucket }}
       dynamodb_table: ${{ steps.tf-outputs.outputs.dynamodb_table }}
-      kafka_brokers: ${{ steps.tf-outputs.outputs.kafka_brokers }}
+      yolo_sagemaker_endpoint: ${{ steps.tf-outputs.outputs.yolo_sagemaker_endpoint }}
 
   upload-yolo-model:
     runs-on: ubuntu-latest
@@ -254,7 +242,7 @@ jobs:
           SQS_QUEUE_URL: ${{ needs.deploy-infra.outputs.sqs_queue_url }}
           S3_BUCKET: ${{ needs.deploy-infra.outputs.s3_bucket }}
           DYNAMODB_TABLE: ${{ needs.deploy-infra.outputs.dynamodb_table }}
-          KAFKA_BROKERS: ${{ needs.deploy-infra.outputs.kafka_brokers }}
+          YOLO_SAGEMAKER_ENDPOINT: ${{ needs.deploy-infra.outputs.yolo_sagemaker_endpoint }}
           WORKER_ROLE_ARN: ${{ needs.deploy-infra.outputs.worker_role_arn }}
         run: |
           # Escreve override em arquivo para evitar problemas com caracteres especiais
@@ -265,8 +253,9 @@ jobs:
             SQS_QUEUE_URL: "${SQS_QUEUE_URL}"
             S3_BUCKET: "${S3_BUCKET}"
             DYNAMODB_TABLE: "${DYNAMODB_TABLE}"
-            KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_BROKERS}"
-            KAFKA_TOPIC_ANALYSIS_COMPLETED: "analysis-completed"
+            YOLO_SAGEMAKER_ENDPOINT: "${YOLO_SAGEMAKER_ENDPOINT}"
+            LLM_PROVIDER: "bedrock"
+            BEDROCK_MODEL_ID: "amazon.nova-lite-v1:0"
           EOF
 
           helm upgrade --install worker-service \
@@ -283,7 +272,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
-          KAFKA_BROKERS: ${{ needs.deploy-infra.outputs.kafka_brokers }}
+          KAFKA_BROKERS: ""
           DYNAMODB_TABLE: ${{ needs.deploy-infra.outputs.dynamodb_table }}
         run: |
           # Criando arquivo de override para evitar que as vírgulas do Kafka quebrem o Helm

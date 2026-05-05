@@ -23,7 +23,7 @@ env:
   YOLO_SAGEMAKER_ENDPOINT: "tech-challenger-yolo-prod"
   LLM_PROVIDER: "bedrock"
   SAGEMAKER_ENDPOINT: ""
-  BEDROCK_MODEL_ID: "amazon.titan-text-lite-v1"
+  BEDROCK_MODEL_ID: "amazon.nova-lite-v1:0"
 
 existingSecretName: ""
 secretEnv: []
