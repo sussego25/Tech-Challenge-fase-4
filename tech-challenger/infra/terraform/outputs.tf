@@ -133,32 +133,13 @@ output "sagemaker_execution_role_arn" {
 }
 
 # ─────────────────────────────────────────────
-# Kafka (MSK)
+# Kafka/MSK removido do deploy atual
 # ─────────────────────────────────────────────
-output "kafka_bootstrap_brokers_tls" {
-  description = "Endpoints TLS dos brokers MSK para os servicos no EKS (null quando enable_kafka=false)"
-  value       = try(module.kafka[0].bootstrap_brokers_tls, null)
-}
-
-output "kafka_bootstrap_brokers" {
-  description = "Endpoints PLAINTEXT dos brokers MSK (null quando enable_kafka=false)"
-  value       = try(module.kafka[0].bootstrap_brokers, null)
-}
-
-output "kafka_cluster_arn" {
-  description = "ARN do cluster MSK (null quando enable_kafka=false)"
-  value       = try(module.kafka[0].cluster_arn, null)
-}
-
-output "kafka_cluster_name" {
-  description = "Nome do cluster MSK (null quando enable_kafka=false)"
-  value       = try(module.kafka[0].cluster_name, null)
-}
-
-output "kafka_security_group_id" {
-  description = "ID do security group do cluster MSK (null quando enable_kafka=false)"
-  value       = try(module.kafka[0].security_group_id, null)
-}
+# output "kafka_bootstrap_brokers_tls" {}
+# output "kafka_bootstrap_brokers" {}
+# output "kafka_cluster_arn" {}
+# output "kafka_cluster_name" {}
+# output "kafka_security_group_id" {}
 
 # ─────────────────────────────────────────────
 # ECR

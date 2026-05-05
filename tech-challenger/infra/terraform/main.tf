@@ -156,22 +156,11 @@ module "sagemaker" {
   instance_count         = var.sagemaker_instance_count
 }
 
-module "kafka" {
-  count  = var.enable_kafka ? 1 : 0
-  source = "../kafka/terraform"
-
-  aws_region             = var.aws_region
-  environment            = var.environment
-  project_name           = var.project_name
-  common_tags            = var.common_tags
-  vpc_id                 = var.enable_networking ? module.networking[0].vpc_id : var.kafka_vpc_id
-  subnet_ids             = var.enable_networking ? module.networking[0].private_subnet_ids : var.kafka_subnet_ids
-  kafka_version          = var.kafka_version
-  broker_instance_type   = var.kafka_broker_instance_type
-  number_of_broker_nodes = var.kafka_number_of_broker_nodes
-  broker_volume_size     = var.kafka_broker_volume_size
-  allowed_cidr_blocks    = var.enable_networking ? module.networking[0].private_subnet_cidrs : var.kafka_allowed_cidr_blocks
-}
+# Kafka/MSK removido do deploy atual.
+# module "kafka" {
+#   count  = var.enable_kafka ? 1 : 0
+#   source = "../kafka/terraform"
+# }
 
 module "ecr" {
   source = "../ecr/terraform"
