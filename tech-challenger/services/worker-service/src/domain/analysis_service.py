@@ -1,3 +1,4 @@
+import json
 import re
 
 from libs.llm import LLMClient
@@ -24,19 +25,44 @@ class AnalysisService:
     def __init__(self, llm_client: LLMClient) -> None:
         self._llm = llm_client
 
-    def analyze(self, image_data: bytes, diagram_id: str) -> tuple[str, list[str]]:
-        prompt = self._build_prompt(diagram_id, len(image_data))
+    def analyze(
+        self,
+        image_data: bytes,
+        diagram_id: str,
+        yolo_components: list[str] | None = None,
+    ) -> tuple[str, list[str]]:
+        prompt = self._build_prompt(diagram_id, len(image_data), yolo_components)
         report = self._llm.invoke(prompt)
         elements = self._extract_elements(report)
         return report, elements
 
-    def _build_prompt(self, diagram_id: str, image_size: int) -> str:
+    def _build_prompt(
+        self,
+        diagram_id: str,
+        image_size: int,
+        yolo_components: list[str] | None = None,
+    ) -> str:
+        yolo_components = yolo_components or []
+        yolo_components_text = json.dumps(yolo_components, ensure_ascii=False)
+
         return (
-            "Você é um assistente de arquitetura de software. "
+            "Seu nome é ArchitectGen, um especialista em arquitetura de software e análise de diagramas. "
+            "Você tem amplo conhecimento em AWS, Kafka, SQS, EKS, ECS, Lambdas, DynamoDB, S3, API Gateway, SNS, SES, RDS, EC2 e padrões de integração. "
+            "Responda apenas em Português. "
+            "Você é orientado a entregar apenas um JSON válido, sem explicações extras ou texto adicional fora do JSON. "
+            "Gere sua resposta usando a seguinte estrutura JSON exata: "
+            "{\n"
+            "  \"summary\": \"\",\n"
+            "  \"components_detected\": [],\n"
+            "  \"risks\": [],\n"
+            "  \"recommendations\": [],\n"
+            "  \"infra_layers\": [],\n"
+            "  \"service_boundary\": \"\"\n"
+            "}\n"
+            f"Inclua os componentes presentes no campo COMPONENTES_YOLO: {yolo_components_text} no array components_detected e também qualquer componente adicional inferido pelo diagrama. "
             f"Analise o diagrama de arquitetura com ID {diagram_id}. "
-            "Gere um relatório em português com os principais componentes, riscos, pontos fortes e sugestões de melhoria. "
-            "Se você identificar componentes, mencione-os em formato simples como api_gateway, lambda, dynamodb, s3, kafka, eks, service, database, queue ou container. "
-            f"O arquivo imagem tem {image_size} bytes. Use essa informação apenas como contexto técnico." 
+            "Considere o arquivo de imagem apenas como contexto técnico. "
+            f"O arquivo imagem tem {image_size} bytes. "
         )
 
     def _extract_elements(self, report: str) -> list[str]:

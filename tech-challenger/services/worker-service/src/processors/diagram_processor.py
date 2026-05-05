@@ -30,7 +30,11 @@ class DiagramProcessor:
 
         try:
             image_data = self._s3.download_file(event.s3_key, bucket=event.s3_bucket)
-            report, elements = self._analysis.analyze(image_data, str(event.diagram_id))
+            report, elements = self._analysis.analyze(
+                image_data,
+                str(event.diagram_id),
+                yolo_components=[],
+            )
             diagram.mark_completed(report, elements)
             completed_event = ArchitectureAnalysisCompletedEvent(
                 diagram_id=event.diagram_id,

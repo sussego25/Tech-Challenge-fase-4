@@ -29,6 +29,23 @@ class TestAnalysisServiceReport:
         prompt = mock_llm.invoke.call_args[0][0]
         assert "my-diagram-42" in prompt
 
+    def test_prompt_includes_json_schema_and_yolo_placeholder(self, mock_llm):
+        svc = AnalysisService(llm_client=mock_llm)
+        svc.analyze(b"image-bytes", "my-diagram-42")
+        prompt = mock_llm.invoke.call_args[0][0]
+        assert "components_detected" in prompt
+        assert "risks" in prompt
+        assert "recommendations" in prompt
+        assert "COMPONENTES_YOLO" in prompt
+
+    def test_prompt_includes_actual_yolo_components_list(self, mock_llm):
+        svc = AnalysisService(llm_client=mock_llm)
+        yolo_components = ["api_gateway", "lambda", "dynamodb"]
+        svc.analyze(b"image-bytes", "my-diagram-42", yolo_components=yolo_components)
+        prompt = mock_llm.invoke.call_args[0][0]
+        assert '["api_gateway", "lambda", "dynamodb"]' in prompt
+        assert "Inclua os componentes presentes no campo COMPONENTES_YOLO" in prompt
+
 
 class TestAnalysisServiceElements:
     def test_extracts_service_keyword(self, mock_llm):
