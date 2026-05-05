@@ -1,2 +1,2 @@
-destroy: true
+destroy: false
 confirmation: DESTRUIR

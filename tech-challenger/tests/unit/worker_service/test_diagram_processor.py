@@ -85,6 +85,17 @@ class TestDiagramProcessorSuccess:
         processor.process(event)
         mock_analysis.analyze.assert_called_once()
 
+    def test_passes_yolo_components_from_event_metadata(
+        self, processor, mock_analysis, event
+    ):
+        event.metadata["COMPONENTES_YOLO"] = '["lambda", "s3", "dynamodb"]'
+        processor.process(event)
+        assert mock_analysis.analyze.call_args.kwargs["yolo_components"] == [
+            "lambda",
+            "s3",
+            "dynamodb",
+        ]
+
     def test_saves_diagram_twice(self, processor, mock_repo, event):
         processor.process(event)
         assert mock_repo.save.call_count == 2

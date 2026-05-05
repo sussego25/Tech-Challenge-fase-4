@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 
 from contracts.entities.architecture_diagram import ArchitectureDiagram
@@ -33,7 +34,7 @@ class DiagramProcessor:
             report, elements = self._analysis.analyze(
                 image_data,
                 str(event.diagram_id),
-                yolo_components=[],
+                yolo_components=self._get_yolo_components(event),
             )
             diagram.mark_completed(report, elements)
             completed_event = ArchitectureAnalysisCompletedEvent(
@@ -55,3 +56,25 @@ class DiagramProcessor:
 
         self._repo.save(diagram)
         self._kafka.publish_analysis_completed(completed_event)
+
+    def _get_yolo_components(
+        self,
+        event: ArchitectureAnalysisRequestedEvent,
+    ) -> list[str]:
+        for key in ("COMPONENTES_YOLO", "components_yolo", "yolo_components"):
+            raw_components = event.metadata.get(key)
+            if raw_components:
+                return self._parse_yolo_components(raw_components)
+        return []
+
+    def _parse_yolo_components(self, raw_components: str) -> list[str]:
+        try:
+            parsed = json.loads(raw_components)
+        except json.JSONDecodeError:
+            parsed = raw_components.split(",")
+
+        if isinstance(parsed, list):
+            return [str(component).strip() for component in parsed if str(component).strip()]
+
+        component = str(parsed).strip()
+        return [component] if component else []
