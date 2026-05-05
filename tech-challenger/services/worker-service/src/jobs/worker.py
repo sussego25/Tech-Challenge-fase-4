@@ -6,11 +6,10 @@ from config.settings import Settings
 from consumers.sqs_consumer import SQSConsumer
 from domain.analysis_service import AnalysisService
 from infrastructure.diagram_repository import DynamoDBDiagramRepository
-from infrastructure.kafka_publisher import KafkaPublisher
+from infrastructure.yolo_detector import YoloDetector
 from libs.aws.s3_client import S3Client
 from libs.aws.sqs_client import SQSClient
 from libs.llm import LLMClient
-from libs.messaging.kafka_producer import KafkaProducer
 from processors.diagram_processor import DiagramProcessor
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -22,21 +21,21 @@ def main() -> None:
 
     if not settings.SQS_QUEUE_URL:
         raise RuntimeError("SQS_QUEUE_URL env var is not set — cannot start worker")
-    if not settings.KAFKA_BOOTSTRAP_SERVERS:
-        raise RuntimeError("KAFKA_BOOTSTRAP_SERVERS env var is not set — cannot start worker")
+    if not settings.YOLO_SAGEMAKER_ENDPOINT:
+        raise RuntimeError(
+            "YOLO_SAGEMAKER_ENDPOINT env var is not set — cannot start worker"
+        )
 
     s3_client = S3Client(region=settings.AWS_REGION)
     sqs_client = SQSClient(queue_url=settings.SQS_QUEUE_URL, region=settings.AWS_REGION)
-    kafka_producer = KafkaProducer(bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS)
+    yolo_detector = YoloDetector(
+        endpoint_name=settings.YOLO_SAGEMAKER_ENDPOINT,
+        region=settings.AWS_REGION,
+    )
 
     dynamodb = boto3.resource("dynamodb", region_name=settings.AWS_REGION)
     table = dynamodb.Table(settings.DYNAMODB_TABLE)
     repo = DynamoDBDiagramRepository(table=table)
-
-    kafka_publisher = KafkaPublisher(
-        producer=kafka_producer,
-        topic=settings.KAFKA_TOPIC_ANALYSIS_COMPLETED,
-    )
 
     if settings.LLM_PROVIDER == "sagemaker":
         if not settings.SAGEMAKER_ENDPOINT:
@@ -64,7 +63,7 @@ def main() -> None:
         s3_client=s3_client,
         analysis_service=analysis_service,
         repository=repo,
-        kafka_publisher=kafka_publisher,
+        yolo_detector=yolo_detector,
     )
     consumer = SQSConsumer(sqs_client=sqs_client, processor=processor)
 

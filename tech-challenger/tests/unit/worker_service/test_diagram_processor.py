@@ -5,7 +5,6 @@ from uuid import uuid4
 
 from processors.diagram_processor import DiagramProcessor
 from contracts.events.analysis_requested import ArchitectureAnalysisRequestedEvent
-from contracts.events.analysis_completed import ArchitectureAnalysisCompletedEvent, AnalysisStatus
 from contracts.entities.architecture_diagram import ArchitectureDiagram, DiagramStatus
 
 
@@ -58,17 +57,19 @@ def mock_repo(diagram):
 
 
 @pytest.fixture
-def mock_kafka_publisher():
-    return MagicMock()
+def mock_yolo_detector():
+    mock = MagicMock()
+    mock.detect_components.return_value = ["lambda", "s3"]
+    return mock
 
 
 @pytest.fixture
-def processor(mock_s3, mock_analysis, mock_repo, mock_kafka_publisher):
+def processor(mock_s3, mock_analysis, mock_repo, mock_yolo_detector):
     return DiagramProcessor(
         s3_client=mock_s3,
         analysis_service=mock_analysis,
         repository=mock_repo,
-        kafka_publisher=mock_kafka_publisher,
+        yolo_detector=mock_yolo_detector,
     )
 
 
@@ -84,6 +85,12 @@ class TestDiagramProcessorSuccess:
     def test_invokes_analysis_service(self, processor, mock_analysis, event):
         processor.process(event)
         mock_analysis.analyze.assert_called_once()
+
+    def test_invokes_yolo_detector_when_metadata_has_no_components(
+        self, processor, mock_yolo_detector, event
+    ):
+        processor.process(event)
+        mock_yolo_detector.detect_components.assert_called_once_with(b"fake-image-bytes")
 
     def test_passes_yolo_components_from_event_metadata(
         self, processor, mock_analysis, event
@@ -104,23 +111,13 @@ class TestDiagramProcessorSuccess:
         processor.process(event)
         assert diagram.status == DiagramStatus.COMPLETED
 
-    def test_publishes_completed_event_to_kafka(self, processor, mock_kafka_publisher, event):
+    def test_completed_diagram_has_report(self, processor, diagram, event):
         processor.process(event)
-        mock_kafka_publisher.publish_analysis_completed.assert_called_once()
-        published: ArchitectureAnalysisCompletedEvent = (
-            mock_kafka_publisher.publish_analysis_completed.call_args[0][0]
-        )
-        assert published.status == AnalysisStatus.COMPLETED
+        assert diagram.analysis_report == "Architecture analysis report"
 
-    def test_completed_event_has_report(self, processor, mock_kafka_publisher, event):
+    def test_completed_diagram_has_elements(self, processor, diagram, event):
         processor.process(event)
-        published = mock_kafka_publisher.publish_analysis_completed.call_args[0][0]
-        assert published.analysis_report == "Architecture analysis report"
-
-    def test_completed_event_has_elements(self, processor, mock_kafka_publisher, event):
-        processor.process(event)
-        published = mock_kafka_publisher.publish_analysis_completed.call_args[0][0]
-        assert published.elements_detected == ["service", "database"]
+        assert diagram.elements_detected == ["service", "database"]
 
 
 class TestDiagramProcessorFailure:
@@ -130,22 +127,6 @@ class TestDiagramProcessorFailure:
         mock_analysis.analyze.side_effect = RuntimeError("LLM unavailable")
         processor.process(event)
         assert diagram.status == DiagramStatus.FAILED
-
-    def test_publishes_failed_event_to_kafka(
-        self, processor, mock_analysis, mock_kafka_publisher, event
-    ):
-        mock_analysis.analyze.side_effect = RuntimeError("LLM unavailable")
-        processor.process(event)
-        published = mock_kafka_publisher.publish_analysis_completed.call_args[0][0]
-        assert published.status == AnalysisStatus.FAILED
-
-    def test_failed_event_contains_error_message(
-        self, processor, mock_analysis, mock_kafka_publisher, event
-    ):
-        mock_analysis.analyze.side_effect = RuntimeError("LLM unavailable")
-        processor.process(event)
-        published = mock_kafka_publisher.publish_analysis_completed.call_args[0][0]
-        assert "LLM unavailable" in published.error_message
 
     def test_still_saves_diagram_on_failure(
         self, processor, mock_analysis, mock_repo, event

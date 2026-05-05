@@ -1,12 +1,10 @@
 import json
-from datetime import datetime, timezone
 
 from contracts.entities.architecture_diagram import ArchitectureDiagram
 from contracts.events.analysis_requested import ArchitectureAnalysisRequestedEvent
-from contracts.events.analysis_completed import ArchitectureAnalysisCompletedEvent, AnalysisStatus
 from domain.analysis_service import AnalysisService
 from infrastructure.diagram_repository import DynamoDBDiagramRepository
-from infrastructure.kafka_publisher import KafkaPublisher
+from infrastructure.yolo_detector import YoloDetector
 from libs.aws.s3_client import S3Client
 
 
@@ -16,12 +14,12 @@ class DiagramProcessor:
         s3_client: S3Client,
         analysis_service: AnalysisService,
         repository: DynamoDBDiagramRepository,
-        kafka_publisher: KafkaPublisher,
+        yolo_detector: YoloDetector | None = None,
     ) -> None:
         self._s3 = s3_client
         self._analysis = analysis_service
         self._repo = repository
-        self._kafka = kafka_publisher
+        self._yolo = yolo_detector
 
     def process(self, event: ArchitectureAnalysisRequestedEvent) -> None:
         diagram: ArchitectureDiagram = self._repo.get(str(event.diagram_id))
@@ -31,41 +29,33 @@ class DiagramProcessor:
 
         try:
             image_data = self._s3.download_file(event.s3_key, bucket=event.s3_bucket)
+            yolo_components = self._get_yolo_components(event, image_data)
             report, elements = self._analysis.analyze(
                 image_data,
                 str(event.diagram_id),
-                yolo_components=self._get_yolo_components(event),
+                yolo_components=yolo_components,
             )
-            diagram.mark_completed(report, elements)
-            completed_event = ArchitectureAnalysisCompletedEvent(
-                diagram_id=event.diagram_id,
-                status=AnalysisStatus.COMPLETED,
-                analysis_report=report,
-                elements_detected=elements,
-                completed_at=datetime.now(timezone.utc),
-            )
+            diagram.mark_completed(report, elements or yolo_components)
         except Exception as exc:
             error_msg = str(exc)
             diagram.mark_failed(error_msg)
-            completed_event = ArchitectureAnalysisCompletedEvent(
-                diagram_id=event.diagram_id,
-                status=AnalysisStatus.FAILED,
-                completed_at=datetime.now(timezone.utc),
-                error_message=error_msg,
-            )
 
         self._repo.save(diagram)
-        self._kafka.publish_analysis_completed(completed_event)
 
     def _get_yolo_components(
         self,
         event: ArchitectureAnalysisRequestedEvent,
+        image_data: bytes,
     ) -> list[str]:
         for key in ("COMPONENTES_YOLO", "components_yolo", "yolo_components"):
             raw_components = event.metadata.get(key)
             if raw_components:
                 return self._parse_yolo_components(raw_components)
-        return []
+
+        if self._yolo is None:
+            return []
+
+        return self._yolo.detect_components(image_data)
 
     def _parse_yolo_components(self, raw_components: str) -> list[str]:
         try:

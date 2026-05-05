@@ -173,6 +173,36 @@ variable "sagemaker_instance_count" {
   default     = 1
 }
 
+variable "enable_yolo_sagemaker" {
+  description = "Habilita criacao do endpoint SageMaker YOLO"
+  type        = bool
+  default     = false
+}
+
+variable "yolo_sagemaker_model_container_image" {
+  description = "URI da imagem de inferencia PyTorch/SageMaker usada pelo modelo YOLO"
+  type        = string
+  default     = "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.1.0-cpu-py310-ubuntu20.04-sagemaker"
+}
+
+variable "yolo_sagemaker_model_data_url" {
+  description = "URI S3 do artefato YOLO model.tar.gz"
+  type        = string
+  default     = ""
+}
+
+variable "yolo_sagemaker_instance_type" {
+  description = "Tipo de instancia SageMaker para o endpoint YOLO"
+  type        = string
+  default     = "ml.m5.large"
+}
+
+variable "yolo_sagemaker_instance_count" {
+  description = "Numero de instancias no endpoint YOLO"
+  type        = number
+  default     = 1
+}
+
 # ─────────────────────────────────────────────
 # Kafka (Amazon MSK)
 # ─────────────────────────────────────────────

@@ -17,8 +17,8 @@ def package_model() -> None:
 
     with tarfile.open(OUTPUT_FILE, "w:gz") as tar:
         tar.add(MODEL_FILE, arcname=MODEL_FILE.name)
-        tar.add(INFERENCE_FILE, arcname=INFERENCE_FILE.name)
-        tar.add(REQUIREMENTS_FILE, arcname=REQUIREMENTS_FILE.name)
+        tar.add(INFERENCE_FILE, arcname=f"code/{INFERENCE_FILE.name}")
+        tar.add(REQUIREMENTS_FILE, arcname=f"code/{REQUIREMENTS_FILE.name}")
 
     print(f"Pacote criado: {OUTPUT_FILE}")
 

@@ -81,7 +81,14 @@ class TestLLMClientInvoke:
             modelId="my-bedrock-model",
             contentType="application/json",
             accept="application/json",
-            body=json.dumps({"input": "my prompt"}).encode(),
+            body=json.dumps({
+                "inputText": "my prompt",
+                "textGenerationConfig": {
+                    "maxTokenCount": 2048,
+                    "temperature": 0.2,
+                    "topP": 0.9,
+                },
+            }).encode(),
         )
 
     def test_invoke_accepts_plain_text_response(self, sagemaker_llm, mock_boto_client):

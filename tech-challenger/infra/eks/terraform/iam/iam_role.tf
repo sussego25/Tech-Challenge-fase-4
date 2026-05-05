@@ -92,3 +92,30 @@ resource "aws_iam_role_policy" "worker_s3_policy" {
     }]
   })
 }
+
+resource "aws_iam_role_policy" "worker_ai_invoke_policy" {
+  name = "${var.project_name}-worker-ai-invoke-policy-${var.environment}"
+  role = aws_iam_role.worker_service_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowInvokeYoloSageMakerEndpoint"
+        Effect = "Allow"
+        Action = [
+          "sagemaker:InvokeEndpoint"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowInvokeBedrockModel"
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModel"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}

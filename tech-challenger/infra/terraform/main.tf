@@ -156,6 +156,20 @@ module "sagemaker" {
   instance_count         = var.sagemaker_instance_count
 }
 
+module "yolo_sagemaker" {
+  count  = var.enable_yolo_sagemaker ? 1 : 0
+  source = "../yolo-sagemaker/terraform"
+
+  environment            = var.environment
+  project_name           = var.project_name
+  common_tags            = var.common_tags
+  s3_diagrams_bucket_arn = module.s3.diagrams_bucket_arn
+  model_container_image  = var.yolo_sagemaker_model_container_image
+  model_data_url         = var.yolo_sagemaker_model_data_url
+  instance_type          = var.yolo_sagemaker_instance_type
+  instance_count         = var.yolo_sagemaker_instance_count
+}
+
 # Kafka/MSK removido do deploy atual.
 # module "kafka" {
 #   count  = var.enable_kafka ? 1 : 0

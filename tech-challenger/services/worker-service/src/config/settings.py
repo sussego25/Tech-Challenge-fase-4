@@ -5,9 +5,9 @@ class Settings:
     SQS_QUEUE_URL: str = os.environ.get("SQS_QUEUE_URL", "")
     S3_BUCKET: str = os.environ.get("S3_BUCKET", "")
     DYNAMODB_TABLE: str = os.environ.get("DYNAMODB_TABLE", "")
-    KAFKA_BOOTSTRAP_SERVERS: str = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "")
-    KAFKA_TOPIC_ANALYSIS_COMPLETED: str = os.environ.get(
-        "KAFKA_TOPIC_ANALYSIS_COMPLETED", "analysis-completed"
+    YOLO_SAGEMAKER_ENDPOINT: str = os.environ.get(
+        "YOLO_SAGEMAKER_ENDPOINT",
+        os.environ.get("SAGEMAKER_ENDPOINT", ""),
     )
     LLM_PROVIDER: str = os.environ.get("LLM_PROVIDER", "sagemaker").lower()
     SAGEMAKER_ENDPOINT: str = os.environ.get("SAGEMAKER_ENDPOINT", "")

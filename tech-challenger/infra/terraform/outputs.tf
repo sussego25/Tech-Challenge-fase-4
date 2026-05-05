@@ -132,6 +132,21 @@ output "sagemaker_execution_role_arn" {
   value       = try(module.sagemaker[0].sagemaker_execution_role_arn, null)
 }
 
+output "yolo_sagemaker_endpoint_name" {
+  description = "Nome do endpoint SageMaker YOLO (null quando enable_yolo_sagemaker=false)"
+  value       = try(module.yolo_sagemaker[0].endpoint_name, null)
+}
+
+output "yolo_sagemaker_endpoint_arn" {
+  description = "ARN do endpoint SageMaker YOLO (null quando enable_yolo_sagemaker=false)"
+  value       = try(module.yolo_sagemaker[0].endpoint_arn, null)
+}
+
+output "yolo_sagemaker_execution_role_arn" {
+  description = "ARN da execution role do SageMaker YOLO (null quando enable_yolo_sagemaker=false)"
+  value       = try(module.yolo_sagemaker[0].sagemaker_execution_role_arn, null)
+}
+
 # ─────────────────────────────────────────────
 # Kafka/MSK removido do deploy atual
 # ─────────────────────────────────────────────

@@ -19,12 +19,21 @@ class BedrockClient:
             raise ValueError("model_id must be a non-empty string")
         self._model_id = model_id
         self._client = boto_client or boto3.client(
-            "bedrock",
+            "bedrock-runtime",
             region_name=region or os.getenv("AWS_REGION"),
         )
 
     def invoke(self, prompt: str) -> str:
-        body = json.dumps({"input": prompt}).encode()
+        body = json.dumps(
+            {
+                "inputText": prompt,
+                "textGenerationConfig": {
+                    "maxTokenCount": 2048,
+                    "temperature": 0.2,
+                    "topP": 0.9,
+                },
+            }
+        ).encode()
         try:
             response = self._client.invoke_model(
                 modelId=self._model_id,
@@ -42,6 +51,14 @@ class BedrockClient:
         try:
             parsed = json.loads(text)
             if isinstance(parsed, dict):
+                results = parsed.get("results")
+                if (
+                    isinstance(results, list)
+                    and results
+                    and isinstance(results[0], dict)
+                    and "outputText" in results[0]
+                ):
+                    return results[0]["outputText"]
                 if "generated_text" in parsed:
                     return parsed["generated_text"]
                 if "output" in parsed:

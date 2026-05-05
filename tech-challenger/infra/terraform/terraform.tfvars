@@ -3,10 +3,12 @@ environment = "prod"
 # ─────────────────────────────────────────────
 # Feature flags — habilitar módulos condicionais
 # ─────────────────────────────────────────────
-enable_networking = true
-enable_eks        = true
-enable_kafka      = false
-enable_worker_iam = true
+enable_networking     = true
+enable_eks            = true
+enable_kafka          = false
+enable_sagemaker      = false
+enable_yolo_sagemaker = true
+enable_worker_iam     = true
 
 # ─────────────────────────────────────────────
 # Networking
@@ -33,3 +35,8 @@ eks_node_max_size      = 2
 # ─────────────────────────────────────────────
 k8s_namespace            = "prod"
 k8s_service_account_name = "worker-service"
+
+# ─────────────────────────────────────────────
+# YOLO SageMaker
+# ─────────────────────────────────────────────
+yolo_sagemaker_model_data_url = "s3://tech-challenger-diagrams-prod-325066546876/models/yolo/model.tar.gz"

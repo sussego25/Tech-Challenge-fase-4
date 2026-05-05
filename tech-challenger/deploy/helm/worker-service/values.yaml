@@ -19,11 +19,10 @@ env:
   AWS_REGION: us-east-1
   SQS_QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/325066546876/tech-challenger-architecture-analysis-queue-prod"
   DYNAMODB_TABLE: "tech-challenger-diagrams-prod"
-  KAFKA_BOOTSTRAP_SERVERS: "b-2.techchallengerkafkapr.2fte6w.c23.kafka.us-east-1.amazonaws.com:9092,b-1.techchallengerkafkapr.2fte6w.c23.kafka.us-east-1.amazonaws.com:9092"
-  KAFKA_TOPIC_ANALYSIS_COMPLETED: "analysis-completed"
+  YOLO_SAGEMAKER_ENDPOINT: "tech-challenger-yolo-prod"
   LLM_PROVIDER: "bedrock"
   SAGEMAKER_ENDPOINT: ""
-  BEDROCK_MODEL_ID: "amazon.titan-text-lite"
+  BEDROCK_MODEL_ID: "amazon.titan-text-lite-v1"
 
 # Nome de um Secret existente com variaveis sensiveis (opcional)
 existingSecretName: ""
