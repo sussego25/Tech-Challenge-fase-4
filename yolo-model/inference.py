@@ -3,7 +3,9 @@ import io
 import json
 import os
 from typing import Any, Dict
-
+import numpy as np  # Adicione isso no topo
+import torch
+import os
 from PIL import Image
 from ultralytics import YOLO
 
@@ -54,22 +56,26 @@ def predict_fn(input_data: Image.Image, model: YOLO) -> Any:
             x1, y1, x2, y2 = box.xyxy[0].tolist()
             confidence = float(box.conf[0])
 
-            output.append({
-                "class_id": class_id,
-                "label": label,
-                "confidence": confidence,
-                "x1": x1,
-                "y1": y1,
-                "x2": x2,
-                "y2": y2,
-            })
+            output.append(
+                {
+                    "class_id": class_id,
+                    "label": label,
+                    "confidence": confidence,
+                    "x1": x1,
+                    "y1": y1,
+                    "x2": x2,
+                    "y2": y2,
+                }
+            )
 
     return output
 
 
 def output_fn(prediction: Any, accept: str = "application/json") -> bytes:
     if accept != "application/json":
-        raise ValueError(f"Accept '{accept}' não suportado. Apenas 'application/json' está disponível.")
+        raise ValueError(
+            f"Accept '{accept}' não suportado. Apenas 'application/json' está disponível."
+        )
 
     return json.dumps({"predictions": prediction}).encode("utf-8")
 

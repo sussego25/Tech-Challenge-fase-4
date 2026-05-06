@@ -2,9 +2,6 @@ import base64
 import json
 import os
 from typing import Any
-import cv2
-import numpy as np
-from ultralytics import YOLO
 
 import boto3
 from botocore.config import Config
@@ -32,28 +29,35 @@ class YoloDetector:
         )
 
     def detect_components(self, image_data: bytes) -> list[str]:
-        
+        payload = {
+            "image_data": base64.b64encode(image_data).decode("utf-8"),
+        }
+
         try:
-
-            model = YOLO('modelo_arquitetura_fiap3.pt')
-
-            img_data = base64.b64encode(image_data).decode("utf-8")
-            nparr = np.frombuffer(img_data, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-            results = model.predict(source=img)
-
-            components: list[str] = []
-            if isinstance(results, list):
-                for prediction in results:
-                    label = self._extract_label(prediction)
-                    if label and label not in components:
-                        components.append(label)
-                return components
+            response = self._client.invoke_endpoint(
+                EndpointName="teste_lucas",
+                ContentType="application/json",
+                Accept="application/json",
+                Body=json.dumps(payload).encode("utf-8"),
+            )
         except ClientError as exc:
             raise RuntimeError(
                 f"Failed to invoke YOLO SageMaker endpoint '{self._endpoint_name}': {exc}"
             ) from exc
+
+        raw = response["Body"].read()
+        text = raw.decode("utf-8") if isinstance(raw, bytes) else raw
+        parsed = json.loads(text)
+        predictions = parsed.get("predictions", parsed)
+
+        components: list[str] = []
+        if isinstance(predictions, list):
+            for prediction in predictions:
+                label = self._extract_label(prediction)
+                if label and label not in components:
+                    components.append(label)
+
+        return components
 
     def _extract_label(self, prediction: Any) -> str:
         if isinstance(prediction, dict):
