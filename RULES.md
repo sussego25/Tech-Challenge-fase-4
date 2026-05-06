@@ -50,3 +50,36 @@ Este documento estabelece as regras, convenções e melhores práticas para dese
 - Conflitos não resolvidos: Resolver antes do merge.
 
 Este documento é vivo; contribua com sugestões via issue/PR. Última atualização: [Data Atual].
+
+retonro do sagemake
+{
+  "predictions": [
+    {
+      "class_id": 3,
+      "label": "cloudfront",
+      "confidence": 0.6794843077659607,
+      "x1": 401.8503112792969,
+      "y1": 318.7760925292969,
+      "x2": 479.7858581542969,
+      "y2": 402.1646423339844
+    },
+    {
+      "class_id": 3,
+      "label": "cloudfront",
+      "confidence": 0.6294493079185486,
+      "x1": 142.47381591796875,
+      "y1": 344.940185546875,
+      "x2": 227.85284423828125,
+      "y2": 444.92303466796875
+    },
+    {
+      "class_id": 0,
+      "label": "apigateway",
+      "confidence": 0.330269455909729,
+      "x1": 285.68310546875,
+      "y1": 0.0,
+      "x2": 364.3458251953125,
+      "y2": 40.727237701416016
+    }
+  ]
+}

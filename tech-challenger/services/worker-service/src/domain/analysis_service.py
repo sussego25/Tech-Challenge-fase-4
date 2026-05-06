@@ -34,6 +34,9 @@ class AnalysisService:
         prompt = self._build_prompt(diagram_id, len(image_data), yolo_components)
         report = self._llm.invoke(prompt)
         elements = self._extract_elements(report)
+        for component in yolo_components or []:
+            if component not in elements:
+                elements.append(component)
         return report, elements
 
     def _build_prompt(
