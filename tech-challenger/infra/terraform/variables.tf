@@ -204,63 +204,12 @@ variable "yolo_sagemaker_instance_count" {
 }
 
 # ─────────────────────────────────────────────
-# Kafka (Amazon MSK)
-# ─────────────────────────────────────────────
-variable "enable_kafka" {
-  description = "Habilita criacao do cluster Amazon MSK (Kafka)"
-  type        = bool
-  default     = false
-}
-
-variable "kafka_vpc_id" {
-  description = "ID da VPC para o cluster MSK (obrigatorio quando enable_kafka=true)"
-  type        = string
-  default     = ""
-}
-
-variable "kafka_subnet_ids" {
-  description = "IDs das subnets privadas para os brokers MSK (minimo 2 AZs)"
-  type        = list(string)
-  default     = []
-}
-
-variable "kafka_version" {
-  description = "Versao do Apache Kafka para o cluster MSK"
-  type        = string
-  default     = "3.5.1"
-}
-
-variable "kafka_broker_instance_type" {
-  description = "Tipo de instancia para os brokers MSK (kafka.t3.small para dev)"
-  type        = string
-  default     = "kafka.t3.small"
-}
-
-variable "kafka_number_of_broker_nodes" {
-  description = "Numero de broker nodes MSK"
-  type        = number
-  default     = 2
-}
-
-variable "kafka_broker_volume_size" {
-  description = "Tamanho do volume EBS de cada broker MSK em GB"
-  type        = number
-  default     = 10
-}
-
-variable "kafka_allowed_cidr_blocks" {
-  description = "CIDRs autorizados a conectar no MSK (ex.: CIDR das subnets do EKS)"
-  type        = list(string)
-  default     = []
-}
-
-# ─────────────────────────────────────────────
 # ECR
 # ─────────────────────────────────────────────
 variable "ecr_repository_names" {
   description = "Lista de nomes de repositorios ECR a criar"
   type        = list(string)
-  default     = ["worker-service", "notification-service", "yolo-inference"]
+  default     = ["worker-service", "yolo-inference"]
 }
 
 variable "ecr_image_retention_count" {

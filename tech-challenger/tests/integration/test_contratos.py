@@ -38,23 +38,6 @@ Feature: Validação de Contratos — DiagramUploadRequest
     When o modelo é instanciado
     Then uma ValidationError é lançada
 
-Feature: Validação de Contratos — ArchitectureAnalysisCompletedEvent
-
-  Scenario: Evento COMPLETED válido
-    Given um evento com status "completed" e analysis_report preenchido
-    When o evento é instanciado
-    Then nenhuma exceção é lançada
-
-  Scenario: Evento COMPLETED sem report é rejeitado
-    Given um evento com status "completed" sem analysis_report
-    When o evento é instanciado
-    Then uma ValidationError é lançada com "analysis_report is required"
-
-  Scenario: Evento FAILED sem error_message é rejeitado
-    Given um evento com status "failed" sem error_message
-    When o evento é instanciado
-    Then uma ValidationError é lançada com "error_message is required"
-
 Feature: Validação de Contratos — ArchitectureDiagram (Entity)
 
   Scenario: Transição válida PENDING → PROCESSING
@@ -87,10 +70,6 @@ if _SHARED_DIR not in sys.path:
     sys.path.insert(0, _SHARED_DIR)
 
 from contracts.dto.diagram_upload import DiagramUploadRequest, ACCEPTED_CONTENT_TYPES
-from contracts.events.analysis_completed import (
-    ArchitectureAnalysisCompletedEvent,
-    AnalysisStatus,
-)
 from contracts.events.analysis_requested import ArchitectureAnalysisRequestedEvent
 from contracts.entities.architecture_diagram import ArchitectureDiagram, DiagramStatus
 
@@ -166,74 +145,6 @@ class TestDiagramUploadRequestContentType:
                 user_id="user-abc-123",
                 content_type="image/png",
             )
-
-
-# ===========================================================================
-# ArchitectureAnalysisCompletedEvent — Validação cruzada status ↔ campos
-# ===========================================================================
-class TestAnalysisCompletedEventContrato:
-    """Testes de contrato para o model_validator do evento de conclusão."""
-
-    def test_completed_com_report_valido(self):
-        event = ArchitectureAnalysisCompletedEvent(
-            diagram_id=uuid4(),
-            user_id="user-abc-123",
-            status=AnalysisStatus.COMPLETED,
-            analysis_report="Arquitetura detectada: API Gateway + Lambda",
-            elements_detected=["api_gateway", "lambda"],
-            completed_at=datetime.now(timezone.utc),
-        )
-        assert event.status == AnalysisStatus.COMPLETED
-        assert event.analysis_report is not None
-
-    def test_completed_sem_report_invalido(self):
-        with pytest.raises(ValidationError, match="analysis_report is required"):
-            ArchitectureAnalysisCompletedEvent(
-                diagram_id=uuid4(),
-                user_id="user-abc-123",
-                status=AnalysisStatus.COMPLETED,
-                completed_at=datetime.now(timezone.utc),
-                # analysis_report omitido
-            )
-
-    def test_failed_com_error_message_valido(self):
-        event = ArchitectureAnalysisCompletedEvent(
-            diagram_id=uuid4(),
-            user_id="user-abc-123",
-            status=AnalysisStatus.FAILED,
-            error_message="SageMaker endpoint timeout",
-            completed_at=datetime.now(timezone.utc),
-        )
-        assert event.status == AnalysisStatus.FAILED
-        assert event.error_message is not None
-
-    def test_failed_sem_error_message_invalido(self):
-        with pytest.raises(ValidationError, match="error_message is required"):
-            ArchitectureAnalysisCompletedEvent(
-                diagram_id=uuid4(),
-                user_id="user-abc-123",
-                status=AnalysisStatus.FAILED,
-                completed_at=datetime.now(timezone.utc),
-                # error_message omitido
-            )
-
-    def test_serializacao_json_round_trip(self):
-        """Garante que serializar → deserializar preserva todos os campos."""
-        original = ArchitectureAnalysisCompletedEvent(
-            diagram_id=uuid4(),
-            user_id="user-abc-123",
-            status=AnalysisStatus.COMPLETED,
-            analysis_report="Report completo",
-            elements_detected=["lambda", "dynamodb"],
-            completed_at=datetime.now(timezone.utc),
-        )
-        json_str = original.model_dump_json()
-        restored = ArchitectureAnalysisCompletedEvent.model_validate_json(json_str)
-
-        assert restored.diagram_id == original.diagram_id
-        assert restored.status == original.status
-        assert restored.analysis_report == original.analysis_report
-        assert restored.elements_detected == original.elements_detected
 
 
 # ===========================================================================

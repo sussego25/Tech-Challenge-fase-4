@@ -14,7 +14,6 @@ Feature: Consumo Assíncrono e Resiliência do Worker
     When o worker-service consome a mensagem do SQS
     Then o status do diagrama é atualizado para "completed"
       And o relatório e os elementos detectados são salvos no DynamoDB
-      And um ArchitectureAnalysisCompletedEvent com status "completed" é publicado no Kafka
       And a mensagem é deletada do SQS
 
   Scenario: Falha no SageMaker — status FAILED sem perda de mensagem
@@ -23,7 +22,6 @@ Feature: Consumo Assíncrono e Resiliência do Worker
     When o worker-service consome a mensagem do SQS
     Then o status do diagrama é atualizado para "failed"
       And o error_message contém "InferenceError"
-      And um ArchitectureAnalysisCompletedEvent com status "failed" é publicado no Kafka
       And a mensagem é deletada do SQS (processamento concluído, mesmo com falha)
 
   Scenario: Mensagem SQS com payload inválido
@@ -38,7 +36,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
@@ -55,10 +53,6 @@ if _SHARED_DIR not in sys.path:
 
 from contracts.entities.architecture_diagram import ArchitectureDiagram, DiagramStatus
 from contracts.events.analysis_requested import ArchitectureAnalysisRequestedEvent
-from contracts.events.analysis_completed import (
-    ArchitectureAnalysisCompletedEvent,
-    AnalysisStatus,
-)
 from libs.aws.sqs_client import SQSMessage
 
 
@@ -96,19 +90,18 @@ def sqs_message_from_event(analysis_requested_event):
 
 
 # ---------------------------------------------------------------------------
-# Testes — Happy Path: SQS ➜ Process ➜ COMPLETED ➜ Kafka
+# Testes — Happy Path: SQS -> Process -> COMPLETED -> DynamoDB
 # ---------------------------------------------------------------------------
 class TestWorkerHappyPath:
     """
     Given: diagrama PENDING + imagem no S3 + SageMaker OK
     When:  worker processa a mensagem
-    Then:  DynamoDB=COMPLETED + Kafka event published
+    Then:  DynamoDB=COMPLETED + relatório persistido
     """
 
     def test_processa_diagrama_com_sucesso(
         self,
         mock_s3_client,
-        mock_kafka_producer,
         pending_diagram,
         analysis_requested_event,
         sample_image_bytes,
@@ -116,8 +109,6 @@ class TestWorkerHappyPath:
         from processors.diagram_processor import DiagramProcessor
         from domain.analysis_service import AnalysisService
         from infrastructure.diagram_repository import DynamoDBDiagramRepository
-        from infrastructure.kafka_publisher import KafkaPublisher
-        from libs.messaging.kafka_producer import KafkaProducer
 
         # Mock do repositório — captura cópias a cada save (o objeto é mutado in-place)
         saved_snapshots: list[ArchitectureDiagram] = []
@@ -132,9 +123,6 @@ class TestWorkerHappyPath:
             ["api_gateway", "lambda", "dynamodb"],
         )
 
-        # Mock do Kafka publisher
-        mock_kafka_pub = MagicMock(spec=KafkaPublisher)
-
         # S3 retorna imagem
         mock_s3_client.download_file.return_value = sample_image_bytes
 
@@ -142,7 +130,6 @@ class TestWorkerHappyPath:
             s3_client=mock_s3_client,
             analysis_service=mock_analysis,
             repository=mock_repo,
-            kafka_publisher=mock_kafka_pub,
         )
 
         # --- Act ---
@@ -161,15 +148,9 @@ class TestWorkerHappyPath:
 
         # S3: download chamado
         mock_s3_client.download_file.assert_called_once_with(
-            analysis_requested_event.s3_key
+            analysis_requested_event.s3_key,
+            bucket=analysis_requested_event.s3_bucket,
         )
-
-        # Kafka: evento COMPLETED publicado
-        mock_kafka_pub.publish_analysis_completed.assert_called_once()
-        kafka_event = mock_kafka_pub.publish_analysis_completed.call_args[0][0]
-        assert isinstance(kafka_event, ArchitectureAnalysisCompletedEvent)
-        assert kafka_event.status == AnalysisStatus.COMPLETED
-        assert kafka_event.diagram_id == analysis_requested_event.diagram_id
 
 
 # ---------------------------------------------------------------------------
@@ -179,10 +160,10 @@ class TestWorkerSageMakerFailure:
     """
     Given: diagrama PENDING + SageMaker lança exceção
     When:  worker processa a mensagem
-    Then:  DynamoDB=FAILED + Kafka event FAILED (mensagem não perdida)
+    Then:  DynamoDB=FAILED (mensagem não perdida)
     """
 
-    def test_sagemaker_erro_marca_failed_e_publica_kafka(
+    def test_sagemaker_erro_marca_failed_no_dynamo(
         self,
         mock_s3_client,
         pending_diagram,
@@ -192,7 +173,6 @@ class TestWorkerSageMakerFailure:
         from processors.diagram_processor import DiagramProcessor
         from domain.analysis_service import AnalysisService
         from infrastructure.diagram_repository import DynamoDBDiagramRepository
-        from infrastructure.kafka_publisher import KafkaPublisher
 
         mock_repo = MagicMock(spec=DynamoDBDiagramRepository)
         mock_repo.get.return_value = pending_diagram
@@ -203,14 +183,12 @@ class TestWorkerSageMakerFailure:
             "InferenceError: Model endpoint unavailable"
         )
 
-        mock_kafka_pub = MagicMock(spec=KafkaPublisher)
         mock_s3_client.download_file.return_value = sample_image_bytes
 
         processor = DiagramProcessor(
             s3_client=mock_s3_client,
             analysis_service=mock_analysis,
             repository=mock_repo,
-            kafka_publisher=mock_kafka_pub,
         )
 
         # --- Act ---
@@ -224,12 +202,7 @@ class TestWorkerSageMakerFailure:
         assert final_save.status == DiagramStatus.FAILED
         assert final_save.analysis_report is None
         assert final_save.elements_detected == []
-
-        # Kafka: evento FAILED publicado com error_message
-        mock_kafka_pub.publish_analysis_completed.assert_called_once()
-        kafka_event = mock_kafka_pub.publish_analysis_completed.call_args[0][0]
-        assert kafka_event.status == AnalysisStatus.FAILED
-        assert "InferenceError" in kafka_event.error_message
+        assert "InferenceError" in final_save.error_message
 
     def test_sqs_consumer_deleta_mensagem_apos_processamento_com_falha(
         self,
@@ -245,7 +218,6 @@ class TestWorkerSageMakerFailure:
         from processors.diagram_processor import DiagramProcessor
         from domain.analysis_service import AnalysisService
         from infrastructure.diagram_repository import DynamoDBDiagramRepository
-        from infrastructure.kafka_publisher import KafkaPublisher
 
         mock_repo = MagicMock(spec=DynamoDBDiagramRepository)
         mock_repo.get.return_value = pending_diagram
@@ -253,14 +225,12 @@ class TestWorkerSageMakerFailure:
         mock_analysis = MagicMock(spec=AnalysisService)
         mock_analysis.analyze.side_effect = RuntimeError("SageMaker timeout")
 
-        mock_kafka_pub = MagicMock(spec=KafkaPublisher)
         mock_s3_client.download_file.return_value = sample_image_bytes
 
         processor = DiagramProcessor(
             s3_client=mock_s3_client,
             analysis_service=mock_analysis,
             repository=mock_repo,
-            kafka_publisher=mock_kafka_pub,
         )
 
         consumer = SQSConsumer(sqs_client=mock_sqs_client, processor=processor)

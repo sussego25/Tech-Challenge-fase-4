@@ -16,16 +16,6 @@ O projeto utiliza Amazon SQS (Simple Queue Service) para processamento assíncro
 - **Timeout**: 5 minutos
 - **Retenção**: 14 dias
 
-### 2. Notification Queue
-- **Nome**: `tech-challenger-notification-queue-{environment}`
-- **Propósito**: Notificações de eventos (pedidos concluídos, processamentos finalizados)
-- **Produtores**: Order Service, Worker Service
-- **Consumidores**: Notification Service
-- **DLQ**: `tech-challenger-notification-dlq-{environment}`
-- **Retry**: 3 tentativas antes de enviar para DLQ
-- **Timeout**: 5 minutos
-- **Retenção**: 14 dias
-
 ## Fluxo de Mensagens
 
 ```
@@ -39,13 +29,7 @@ Worker Service Consumer
   ↓
 Processamento (Yolo + LLM)
   ↓
-Kafka Topic (resultado)
-  ↓
-Notification Service
-  ↓
-notification-queue
-  ↓
-Envio de notificação para cliente
+DynamoDB (status, elementos e relatório)
 ```
 
 ## Dead Letter Queues (DLQ)

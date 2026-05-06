@@ -7,10 +7,10 @@
 **Decisão**: Arquitetura de microsserviços
 **Consequências**: Complexidade aumentada, mas maior flexibilidade
 
-### 2. Duplo Canal de Mensageria (Kafka + SQS)
-**Problema**: Diferentes requisitos de processamento
-**Decisão**: Usar Kafka para streams e SQS para filas assíncronas
-**Consequências**: Maior flexibilidade, mais infraestrutura
+### 2. Mensageria Assíncrona com SQS
+**Problema**: Processamento de imagens e análise LLM pode ser demorado
+**Decisão**: Usar SQS como único canal assíncrono entre Lambda e Worker Service
+**Consequências**: Fluxo mais simples, menor custo operacional e menos infraestrutura
 
 ### 3. Deploy em Kubernetes
 **Problema**: Necessidade de orquestração eficiente

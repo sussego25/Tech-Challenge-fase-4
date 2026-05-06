@@ -38,16 +38,6 @@ output "diagrams_table_arn" {
   value       = module.dynamodb.diagrams_table_arn
 }
 
-output "notifications_table_name" {
-  description = "Nome da tabela DynamoDB de notificacoes"
-  value       = module.dynamodb.notifications_table_name
-}
-
-output "notifications_table_arn" {
-  description = "ARN da tabela DynamoDB de notificacoes"
-  value       = module.dynamodb.notifications_table_arn
-}
-
 output "diagrams_bucket_name" {
   description = "Nome do bucket S3 de diagramas"
   value       = module.s3.diagrams_bucket_name
@@ -146,15 +136,6 @@ output "yolo_sagemaker_execution_role_arn" {
   description = "ARN da execution role do SageMaker YOLO (null quando enable_yolo_sagemaker=false)"
   value       = try(module.yolo_sagemaker[0].sagemaker_execution_role_arn, null)
 }
-
-# ─────────────────────────────────────────────
-# Kafka/MSK removido do deploy atual
-# ─────────────────────────────────────────────
-# output "kafka_bootstrap_brokers_tls" {}
-# output "kafka_bootstrap_brokers" {}
-# output "kafka_cluster_arn" {}
-# output "kafka_cluster_name" {}
-# output "kafka_security_group_id" {}
 
 # ─────────────────────────────────────────────
 # ECR

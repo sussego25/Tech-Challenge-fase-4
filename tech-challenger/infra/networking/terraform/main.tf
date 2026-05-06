@@ -175,7 +175,7 @@ resource "aws_security_group" "eks_nodes" {
   description = "Security group for EKS worker nodes"
   vpc_id      = aws_vpc.main.id
 
-  # Allow all egress (needed for Kafka 9092, SageMaker 443, AWS APIs, ECR, etc.)
+  # Allow all egress (needed for SageMaker, AWS APIs, ECR, etc.)
   egress {
     description = "Allow all outbound traffic"
     from_port   = 0

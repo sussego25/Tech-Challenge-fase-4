@@ -83,3 +83,10 @@ retonro do sagemake
     }
   ]
 }
+
+
+aws sagemaker-runtime invoke-endpoint \
+    --endpoint-name tech-challenger-yolo-prod \
+    --body fileb://foto_teste.jpg \
+    --content-type image/jpeg \
+    resultado.json

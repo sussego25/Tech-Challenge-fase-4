@@ -11,7 +11,6 @@ _ELEMENT_KEYWORDS = [
     "sqs",
     "dynamodb",
     "s3",
-    "kafka",
     "eks",
     "database",
     "storage",

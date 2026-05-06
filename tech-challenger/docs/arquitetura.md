@@ -8,22 +8,20 @@ Este documento descreve a arquitetura de microsserviços do Tech Challenger.
 
 ### Serviços
 
-1. **Order Service**: Gerenciamento de pedidos
-2. **Payment Service**: Processamento de pagamentos
-3. **Notification Service**: Envio de notificações
+1. **Lambda Publisher**: recebe eventos de upload no S3, cria o registro inicial no DynamoDB e publica a mensagem na fila SQS
+2. **Worker Service**: consome a fila SQS no EKS, executa YOLO + LLM e grava o relatório no DynamoDB
 
 ### Mensageria
 
-- **Kafka**: Para processamento em stream
-- **SQS**: Para fila de mensagens da AWS
+- **SQS**: fila assíncrona entre Lambda e Worker Service
 
 ## Fluxo de Dados
 
-[Adicione diagramas e descrições do fluxo]
+S3 upload -> Lambda -> SQS -> Worker Service no EKS -> YOLO -> LLM -> DynamoDB
 
 ## Infraestrutura
 
 - **EKS**: Kubernetes gerenciado
-- **RDS**: Banco de dados
-- **SNS/SQS**: Serviços de fila
+- **DynamoDB**: persistência dos diagramas, status e relatório de análise
+- **SQS**: fila de processamento assíncrono
 

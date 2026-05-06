@@ -11,7 +11,7 @@ variable "project_name" {
 variable "repository_names" {
   description = "Lista de nomes de repositorios ECR"
   type        = list(string)
-  default     = ["worker-service", "notification-service", "yolo-inference"]
+  default     = ["worker-service", "yolo-inference"]
 }
 
 variable "image_retention_count" {

@@ -1,6 +1,6 @@
 """
 Fixtures compartilhadas para testes de integração.
-Configura mocks de boto3, confluent_kafka e LocalStack.
+Configura mocks de boto3 e LocalStack.
 """
 
 import json
@@ -17,8 +17,6 @@ import pytest
 TEST_BUCKET = "test-diagrams-bucket"
 TEST_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
 TEST_TABLE_NAME = "test-diagrams-table"
-TEST_KAFKA_TOPIC = "analysis-completed"
-TEST_KAFKA_BOOTSTRAP = "localhost:9092"
 TEST_SAGEMAKER_ENDPOINT = "test-sagemaker-endpoint"
 TEST_USER_ID = "user-abc-123"
 TEST_REGION = "us-east-1"
@@ -72,17 +70,6 @@ def mock_dynamodb_table():
 
 
 # ---------------------------------------------------------------------------
-# Mock Kafka producer
-# ---------------------------------------------------------------------------
-@pytest.fixture
-def mock_kafka_producer():
-    producer = MagicMock()
-    producer.produce = MagicMock(return_value=None)
-    producer.flush = MagicMock(return_value=0)
-    return producer
-
-
-# ---------------------------------------------------------------------------
 # Mock SageMaker / LLM
 # ---------------------------------------------------------------------------
 @pytest.fixture
@@ -112,6 +99,4 @@ def set_env_vars(monkeypatch):
     monkeypatch.setenv("DYNAMODB_TABLE", TEST_TABLE_NAME)
     monkeypatch.setenv("AWS_REGION", TEST_REGION)
     monkeypatch.setenv("AWS_DEFAULT_REGION", TEST_REGION)
-    monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", TEST_KAFKA_BOOTSTRAP)
-    monkeypatch.setenv("KAFKA_TOPIC_ANALYSIS_COMPLETED", TEST_KAFKA_TOPIC)
     monkeypatch.setenv("SAGEMAKER_ENDPOINT", TEST_SAGEMAKER_ENDPOINT)

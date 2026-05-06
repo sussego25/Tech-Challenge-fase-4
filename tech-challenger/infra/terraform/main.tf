@@ -178,12 +178,6 @@ module "yolo_sagemaker" {
   instance_count         = var.yolo_sagemaker_instance_count
 }
 
-# Kafka/MSK removido do deploy atual.
-# module "kafka" {
-#   count  = var.enable_kafka ? 1 : 0
-#   source = "../kafka/terraform"
-# }
-
 module "ecr" {
   source = "../ecr/terraform"
 

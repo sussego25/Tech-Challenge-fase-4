@@ -1,28 +1,6 @@
 version: '3.8'
 
 services:
-  kafka:
-    image: confluentinc/cp-kafka:7.4.0
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.0
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-
   localstack:
     image: localstack/localstack:latest
     ports:
@@ -41,10 +19,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      KAFKA_BROKER_URL: kafka:29092
       SQS_ENDPOINT: http://localstack:4566
     depends_on:
-      - kafka
       - localstack
 
   payment-service:
@@ -53,10 +29,8 @@ services:
     ports:
       - "8081:8080"
     environment:
-      KAFKA_BROKER_URL: kafka:29092
       SQS_ENDPOINT: http://localstack:4566
     depends_on:
-      - kafka
       - localstack
 
   worker-service:
@@ -75,21 +49,4 @@ services:
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
     depends_on:
-      - kafka
-      - localstack
-
-  notification-service:
-    build:
-      context: ..
-      dockerfile: services/notification-service/Dockerfile
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      KAFKA_TOPIC_ANALYSIS_COMPLETED: analysis-completed
-      KAFKA_GROUP_ID: notification-service
-      DYNAMODB_TABLE: tech-challenger-notifications-dev
-      AWS_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-    depends_on:
-      - kafka
       - localstack
