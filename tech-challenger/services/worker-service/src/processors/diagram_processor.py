@@ -35,6 +35,7 @@ class DiagramProcessor:
 
         diagram.mark_processing()
         self._repo.save(diagram)
+        
 
         try:
             image_data = self._s3.download_file(event.s3_key, bucket=event.s3_bucket)
