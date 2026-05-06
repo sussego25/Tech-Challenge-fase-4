@@ -24,6 +24,7 @@ class ArchitectureDiagram(BaseModel):
     diagram_id: UUID = Field(default_factory=uuid4)
     s3_key: str
     s3_bucket: str
+    user_id: str | None = None
     status: DiagramStatus = DiagramStatus.PENDING
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

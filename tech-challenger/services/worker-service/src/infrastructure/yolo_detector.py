@@ -35,7 +35,7 @@ class YoloDetector:
 
         try:
             response = self._client.invoke_endpoint(
-                EndpointName="teste-lucas",
+                EndpointName=self._endpoint_name,
                 ContentType="application/json",
                 Accept="application/json",
                 Body=json.dumps(payload).encode("utf-8"),

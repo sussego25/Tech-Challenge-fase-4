@@ -2,6 +2,7 @@ import json
 import logging
 
 from contracts.entities.architecture_diagram import ArchitectureDiagram
+from contracts.entities.architecture_diagram import DiagramStatus
 from contracts.events.analysis_requested import ArchitectureAnalysisRequestedEvent
 from domain.analysis_service import AnalysisService
 from infrastructure.diagram_repository import DynamoDBDiagramRepository
@@ -33,9 +34,22 @@ class DiagramProcessor:
         )
         diagram: ArchitectureDiagram = self._repo.get(str(event.diagram_id))
 
-        diagram.mark_processing()
-        self._repo.save(diagram)
-        
+        if diagram.status in {DiagramStatus.COMPLETED, DiagramStatus.FAILED}:
+            logger.info(
+                "Diagram analysis already finished: diagram_id=%s status=%s",
+                diagram.diagram_id,
+                diagram.status.value,
+            )
+            return
+
+        if diagram.status == DiagramStatus.PENDING:
+            diagram.mark_processing()
+            self._repo.save(diagram)
+        else:
+            logger.info(
+                "Resuming diagram analysis already in progress: diagram_id=%s",
+                diagram.diagram_id,
+            )
 
         try:
             image_data = self._s3.download_file(event.s3_key, bucket=event.s3_bucket)

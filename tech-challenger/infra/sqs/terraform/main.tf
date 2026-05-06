@@ -17,8 +17,8 @@ resource "aws_sqs_queue" "architecture_analysis_queue" {
   name                       = "${var.project_name}-architecture-analysis-queue-${var.environment}"
   delay_seconds              = 0
   max_message_size           = 262144
-  message_retention_seconds  = 1209600  # 14 dias
-  visibility_timeout_seconds = 300     # 5 minutos
+  message_retention_seconds  = 1209600 # 14 dias
+  visibility_timeout_seconds = 600     # 5 minutos
 
   tags = var.common_tags
 }
