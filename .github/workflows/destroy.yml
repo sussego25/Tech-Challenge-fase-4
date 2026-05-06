@@ -98,8 +98,7 @@ jobs:
       - name: Remover releases Helm
         if: steps.eks.outputs.cluster_name != ''
         run: |
-          helm uninstall worker-service       --namespace ${{ env.ENVIRONMENT }} --ignore-not-found 2>/dev/null || true
-          helm uninstall notification-service --namespace ${{ env.ENVIRONMENT }} --ignore-not-found 2>/dev/null || true
+          helm uninstall worker-service --namespace ${{ env.ENVIRONMENT }} --ignore-not-found 2>/dev/null || true
 
       - name: Deletar todos os Services do tipo LoadBalancer
         # CRÍTICO: Services LoadBalancer criam ELBs fora do Terraform state.

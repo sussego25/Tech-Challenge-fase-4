@@ -202,19 +202,6 @@ jobs:
           docker push $ECR_REGISTRY/worker-service:$IMAGE_TAG
           docker push $ECR_REGISTRY/worker-service:latest
 
-      - name: Build e Push notification-service para ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build \
-            -f tech-challenger/services/notification-service/Dockerfile \
-            -t $ECR_REGISTRY/notification-service:$IMAGE_TAG \
-            -t $ECR_REGISTRY/notification-service:latest \
-            tech-challenger/
-          docker push $ECR_REGISTRY/notification-service:$IMAGE_TAG
-          docker push $ECR_REGISTRY/notification-service:latest
-
       - name: Conceder acesso ao EKS via access entry
         run: |
           # Obtém o ARN do caller atual (usuário/role do GitHub Actions)
@@ -280,7 +267,7 @@ jobs:
           WORKER_ROLE_ARN: ${{ needs.deploy-infra.outputs.worker_role_arn }}
         run: |
           # Escreve override em arquivo para evitar problemas com caracteres especiais
-          # no --set (virgula no KAFKA e barra no SQS_QUEUE_URL quebram o parsing do Helm)
+          # no --set (barra no SQS_QUEUE_URL quebra o parsing do Helm)
           cat > /tmp/worker-values-override.yaml << EOF
           env:
             AWS_REGION: "${AWS_REGION}"
@@ -302,28 +289,3 @@ jobs:
             --set "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=${WORKER_ROLE_ARN}" \
             --wait --timeout 5m
 
-      - name: Deploy notification-service via Helm
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-          KAFKA_BROKERS: ""
-          DYNAMODB_TABLE: ${{ needs.deploy-infra.outputs.dynamodb_table }}
-        run: |
-          # Criando arquivo de override para evitar que as vírgulas do Kafka quebrem o Helm
-          cat > /tmp/notification-values-override.yaml << EOF
-          env:
-            AWS_REGION: "${{ env.AWS_REGION }}"
-            KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_BROKERS}"
-            KAFKA_TOPIC_ANALYSIS_COMPLETED: "analysis-completed"
-            KAFKA_GROUP_ID: "notification-service"
-            DYNAMODB_TABLE: "${DYNAMODB_TABLE}"
-          EOF
-
-          helm upgrade --install notification-service \
-            tech-challenger/infra/eks/helm-charts/notification-service \
-            --namespace ${{ env.ENVIRONMENT }} \
-            --create-namespace \
-            -f /tmp/notification-values-override.yaml \
-            --set image.repository=$ECR_REGISTRY/notification-service \
-            --set image.tag=$IMAGE_TAG \
-            --wait --timeout 5m
