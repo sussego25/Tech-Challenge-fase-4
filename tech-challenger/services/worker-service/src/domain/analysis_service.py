@@ -91,8 +91,9 @@ ReflexÃ£o Final (Reflective): Antes de finalizar o JSON, revise se as recomendaÃ
         return found
 
     def _normalize_report(self, report: str, yolo_components: list[str]) -> str:
+        report_json = self._extract_json_report(report)
         try:
-            parsed = json.loads(report)
+            parsed = json.loads(report_json)
         except json.JSONDecodeError:
             return report
 
@@ -103,3 +104,16 @@ ReflexÃ£o Final (Reflective): Antes de finalizar o JSON, revise se as recomendaÃ
         parsed.setdefault("riscos_identificados", [])
         parsed.setdefault("recomendacoes_melhoria", [])
         return json.dumps(parsed, ensure_ascii=False)
+
+    def _extract_json_report(self, report: str) -> str:
+        cleaned = report.strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+            cleaned = re.sub(r"\s*```$", "", cleaned)
+
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            return cleaned[start : end + 1]
+
+        return cleaned
