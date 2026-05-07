@@ -43,6 +43,14 @@ module "sqs" {
   common_tags  = var.common_tags
 }
 
+module "sns" {
+  source = "../sns/terraform"
+
+  environment  = var.environment
+  project_name = var.project_name
+  common_tags  = var.common_tags
+}
+
 module "dynamodb" {
   source = "../dynamodb/terraform"
 
@@ -114,6 +122,7 @@ module "worker_iam" {
   k8s_service_account_name    = var.k8s_service_account_name
   sqs_queue_arn               = module.sqs.architecture_analysis_queue_arn
   sqs_dlq_arn                 = module.sqs.architecture_analysis_dlq_arn
+  sns_topic_arn               = module.sns.analysis_results_topic_arn
   dynamodb_diagrams_table_arn = module.dynamodb.diagrams_table_arn
   s3_diagrams_bucket_arn      = module.s3.diagrams_bucket_arn
   common_tags                 = var.common_tags

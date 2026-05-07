@@ -18,6 +18,16 @@ output "architecture_analysis_dlq_arn" {
   value       = module.sqs.architecture_analysis_dlq_arn
 }
 
+output "analysis_results_topic_arn" {
+  description = "ARN do topico SNS que recebe o JSON de analise salvo no DynamoDB"
+  value       = module.sns.analysis_results_topic_arn
+}
+
+output "analysis_results_topic_name" {
+  description = "Nome do topico SNS que recebe o JSON de analise salvo no DynamoDB"
+  value       = module.sns.analysis_results_topic_name
+}
+
 output "lambda_documents_role_arn" {
   description = "ARN da role da Lambda de documentos"
   value       = module.lambda_iam.lambda_documents_role_arn

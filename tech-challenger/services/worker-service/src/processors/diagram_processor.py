@@ -8,6 +8,7 @@ from domain.analysis_service import AnalysisService
 from infrastructure.diagram_repository import DynamoDBDiagramRepository
 from infrastructure.yolo_detector import YoloDetector
 from libs.aws.s3_client import S3Client
+from libs.aws.sns_client import SNSClient
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +20,13 @@ class DiagramProcessor:
         analysis_service: AnalysisService,
         repository: DynamoDBDiagramRepository,
         yolo_detector: YoloDetector | None = None,
+        sns_client: SNSClient | None = None,
     ) -> None:
         self._s3 = s3_client
         self._analysis = analysis_service
         self._repo = repository
         self._yolo = yolo_detector
+        self._sns = sns_client
 
     def process(self, event: ArchitectureAnalysisRequestedEvent) -> None:
         logger.info(
@@ -40,6 +43,8 @@ class DiagramProcessor:
                 diagram.diagram_id,
                 diagram.status.value,
             )
+            if diagram.status == DiagramStatus.COMPLETED:
+                self._publish_analysis_report(diagram)
             return
 
         if diagram.status == DiagramStatus.PENDING:
@@ -59,6 +64,9 @@ class DiagramProcessor:
                 event.diagram_id,
                 yolo_components,
             )
+            if not yolo_components:
+                raise RuntimeError("YOLO returned no detected components")
+
             logger.info("Starting LLM analysis: diagram_id=%s", event.diagram_id)
             report, elements = self._analysis.analyze(
                 image_data,
@@ -78,11 +86,20 @@ class DiagramProcessor:
             diagram.mark_failed(error_msg)
 
         self._repo.save(diagram)
+        if diagram.status == DiagramStatus.COMPLETED:
+            self._publish_analysis_report(diagram)
         logger.info(
             "Finished diagram analysis: diagram_id=%s status=%s",
             diagram.diagram_id,
             diagram.status.value,
         )
+
+    def _publish_analysis_report(self, diagram: ArchitectureDiagram) -> None:
+        if self._sns is None or not diagram.analysis_report:
+            return
+
+        logger.info("Publishing analysis report to SNS: diagram_id=%s", diagram.diagram_id)
+        self._sns.publish(diagram.analysis_report)
 
     def _get_yolo_components(
         self,

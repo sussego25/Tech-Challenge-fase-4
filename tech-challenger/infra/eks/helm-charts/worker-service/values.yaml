@@ -18,6 +18,7 @@ env:
   AWS_REGION: us-east-1
   ENVIRONMENT: prod
   SQS_QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/325066546876/tech-challenger-architecture-analysis-queue-prod"
+  SNS_TOPIC_ARN: "arn:aws:sns:us-east-1:325066546876:tech-challenger-analysis-results-prod"
   S3_BUCKET: "tech-challenger-diagrams-prod-325066546876"
   DYNAMODB_TABLE: "tech-challenger-diagrams-prod"
   YOLO_SAGEMAKER_ENDPOINT: "tech-challenger-yolo-prod"

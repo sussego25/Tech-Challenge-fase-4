@@ -40,6 +40,11 @@ variable "sqs_dlq_arn" {
   type        = string
 }
 
+variable "sns_topic_arn" {
+  description = "ARN do topico SNS de resultados de analise"
+  type        = string
+}
+
 variable "dynamodb_diagrams_table_arn" {
   description = "ARN da tabela DynamoDB de diagramas"
   type        = string

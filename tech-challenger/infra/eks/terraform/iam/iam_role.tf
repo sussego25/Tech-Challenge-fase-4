@@ -76,6 +76,21 @@ resource "aws_iam_role_policy" "worker_dynamodb_policy" {
   })
 }
 
+resource "aws_iam_role_policy" "worker_sns_policy" {
+  name = "${var.project_name}-worker-sns-policy-${var.environment}"
+  role = aws_iam_role.worker_service_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid      = "AllowPublishAnalysisResultsToSNS"
+      Effect   = "Allow"
+      Action   = ["sns:Publish"]
+      Resource = var.sns_topic_arn
+    }]
+  })
+}
+
 resource "aws_iam_role_policy" "worker_s3_policy" {
   name = "${var.project_name}-worker-s3-policy-${var.environment}"
   role = aws_iam_role.worker_service_role.id

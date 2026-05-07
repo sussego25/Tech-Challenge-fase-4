@@ -47,8 +47,8 @@ class YoloDetector:
 
         raw = response["Body"].read()
         text = raw.decode("utf-8") if isinstance(raw, bytes) else raw
-        parsed = json.loads(text)
-        predictions = parsed.get("predictions", parsed)
+        parsed = self._parse_response(text)
+        predictions = parsed.get("predictions", parsed) if isinstance(parsed, dict) else parsed
 
         components: list[str] = []
         if isinstance(predictions, list):
@@ -58,6 +58,21 @@ class YoloDetector:
                     components.append(label)
 
         return components
+
+    def _parse_response(self, text: str) -> Any:
+        parsed: Any = json.loads(text)
+
+        if isinstance(parsed, dict) and "body" in parsed:
+            body = parsed["body"]
+            if isinstance(body, (dict, list)):
+                parsed = body
+            elif isinstance(body, str):
+                parsed = json.loads(body)
+
+        while isinstance(parsed, str):
+            parsed = json.loads(parsed)
+
+        return parsed
 
     def _extract_label(self, prediction: Any) -> str:
         if isinstance(prediction, dict):

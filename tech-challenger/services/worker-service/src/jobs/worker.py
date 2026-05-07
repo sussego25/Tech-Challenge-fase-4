@@ -8,6 +8,7 @@ from domain.analysis_service import AnalysisService
 from infrastructure.diagram_repository import DynamoDBDiagramRepository
 from infrastructure.yolo_detector import YoloDetector
 from libs.aws.s3_client import S3Client
+from libs.aws.sns_client import SNSClient
 from libs.aws.sqs_client import SQSClient
 from libs.llm import LLMClient
 from processors.diagram_processor import DiagramProcessor
@@ -21,6 +22,8 @@ def main() -> None:
 
     if not settings.SQS_QUEUE_URL:
         raise RuntimeError("SQS_QUEUE_URL env var is not set — cannot start worker")
+    if not settings.SNS_TOPIC_ARN:
+        raise RuntimeError("SNS_TOPIC_ARN env var is not set — cannot start worker")
     if not settings.YOLO_SAGEMAKER_ENDPOINT:
         raise RuntimeError(
             "YOLO_SAGEMAKER_ENDPOINT env var is not set — cannot start worker"
@@ -28,6 +31,7 @@ def main() -> None:
 
     s3_client = S3Client(region=settings.AWS_REGION)
     sqs_client = SQSClient(queue_url=settings.SQS_QUEUE_URL, region=settings.AWS_REGION)
+    sns_client = SNSClient(topic_arn=settings.SNS_TOPIC_ARN, region=settings.AWS_REGION)
     yolo_detector = YoloDetector(
         endpoint_name=settings.YOLO_SAGEMAKER_ENDPOINT,
         region=settings.AWS_REGION,
@@ -64,6 +68,7 @@ def main() -> None:
         analysis_service=analysis_service,
         repository=repo,
         yolo_detector=yolo_detector,
+        sns_client=sns_client,
     )
     consumer = SQSConsumer(sqs_client=sqs_client, processor=processor)
 

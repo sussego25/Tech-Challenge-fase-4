@@ -39,6 +39,7 @@ services:
       dockerfile: services/worker-service/Dockerfile
     environment:
       SQS_QUEUE_URL: http://localstack:4566/000000000000/tech-challenger-analysis-dev
+      SNS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:tech-challenger-analysis-results-dev
       S3_BUCKET: tech-challenger-diagrams-dev-000000000000
       DYNAMODB_TABLE: tech-challenger-diagrams-dev
       YOLO_SAGEMAKER_ENDPOINT: ""
