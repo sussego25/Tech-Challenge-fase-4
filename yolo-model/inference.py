@@ -24,7 +24,11 @@ def _prepare_image(image: Image.Image) -> Image.Image:
     return image
 
 
-def input_fn(serialized_input_data: bytes, content_type: str) -> Image.Image:
+def input_fn(serialized_input_data: Any, content_type: str) -> Image.Image:
+    # Garante que temos bytes para trabalhar, caso venha como string
+    if isinstance(serialized_input_data, str):
+        serialized_input_data = serialized_input_data.encode("utf-8")
+
     if content_type == "application/json":
         data = json.loads(serialized_input_data.decode("utf-8"))
         image_b64 = data.get("image_data") or data.get("image")
