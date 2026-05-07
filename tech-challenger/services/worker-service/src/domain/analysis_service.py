@@ -30,10 +30,12 @@ class AnalysisService:
         diagram_id: str,
         yolo_components: list[str] | None = None,
     ) -> tuple[str, list[str]]:
+        yolo_components = yolo_components or []
         prompt = self._build_prompt(diagram_id, len(image_data), yolo_components)
         report = self._llm.invoke(prompt)
+        report = self._normalize_report(report, yolo_components)
         elements = self._extract_elements(report)
-        for component in yolo_components or []:
+        for component in yolo_components:
             if component not in elements:
                 elements.append(component)
         return report, elements
@@ -87,3 +89,17 @@ ReflexÃ£o Final (Reflective): Antes de finalizar o JSON, revise se as recomendaÃ
             if re.search(pattern, normalized) and keyword not in found:
                 found.append(keyword)
         return found
+
+    def _normalize_report(self, report: str, yolo_components: list[str]) -> str:
+        try:
+            parsed = json.loads(report)
+        except json.JSONDecodeError:
+            return report
+
+        if not isinstance(parsed, dict):
+            return report
+
+        parsed["analise_componentes"] = yolo_components
+        parsed.setdefault("riscos_identificados", [])
+        parsed.setdefault("recomendacoes_melhoria", [])
+        return json.dumps(parsed, ensure_ascii=False)
