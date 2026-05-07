@@ -70,7 +70,7 @@ class DiagramProcessor:
                 str(event.diagram_id),
                 yolo_components=yolo_components,
             )
-            diagram.mark_completed(report, yolo_components or elements)
+            diagram.mark_completed(report, elements or yolo_components)
         except Exception as exc:
             error_msg = str(exc)
             logger.exception(
@@ -111,21 +111,7 @@ class DiagramProcessor:
         for key in ("COMPONENTES_YOLO", "components_yolo", "yolo_components"):
             raw_components = event.metadata.get(key)
             if raw_components:
-                components = self._parse_yolo_components(raw_components)
-                if components:
-                    logger.info(
-                        "Using YOLO components from metadata: diagram_id=%s key=%s components=%s",
-                        event.diagram_id,
-                        key,
-                        components,
-                    )
-                    return components
-
-                logger.info(
-                    "Ignoring empty YOLO components metadata: diagram_id=%s key=%s",
-                    event.diagram_id,
-                    key,
-                )
+                return self._parse_yolo_components(raw_components)
 
         if self._yolo is None:
             return []

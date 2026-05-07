@@ -1,14 +1,11 @@
 import base64
 import json
-import logging
 import os
 from typing import Any
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
-
-logger = logging.getLogger(__name__)
 
 
 class YoloDetector:
@@ -50,8 +47,8 @@ class YoloDetector:
 
         raw = response["Body"].read()
         text = raw.decode("utf-8") if isinstance(raw, bytes) else raw
-        parsed = self._parse_response(text)
-        predictions = parsed.get("predictions", parsed) if isinstance(parsed, dict) else parsed
+        parsed = json.loads(text)
+        predictions = parsed.get("predictions", parsed)
 
         components: list[str] = []
         if isinstance(predictions, list):
@@ -59,25 +56,8 @@ class YoloDetector:
                 label = self._extract_label(prediction)
                 if label and label not in components:
                     components.append(label)
-        else:
-            logger.warning("YOLO response has no predictions list: response=%s", parsed)
 
         return components
-
-    def _parse_response(self, text: str) -> Any:
-        parsed: Any = json.loads(text)
-
-        if isinstance(parsed, dict) and "body" in parsed:
-            body = parsed["body"]
-            if isinstance(body, (dict, list)):
-                parsed = body
-            elif isinstance(body, str):
-                parsed = json.loads(body)
-
-        while isinstance(parsed, str):
-            parsed = json.loads(parsed)
-
-        return parsed
 
     def _extract_label(self, prediction: Any) -> str:
         if isinstance(prediction, dict):
