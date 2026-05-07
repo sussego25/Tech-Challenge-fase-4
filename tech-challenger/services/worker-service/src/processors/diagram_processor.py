@@ -114,8 +114,17 @@ class DiagramProcessor:
         except json.JSONDecodeError:
             parsed = raw_components.split(",")
 
+        if isinstance(parsed, dict):
+            parsed = parsed.get("predictions", [])
+
         if isinstance(parsed, list):
-            return [str(component).strip() for component in parsed if str(component).strip()]
+            components: list[str] = []
+            for item in parsed:
+                component = item.get("label", "") if isinstance(item, dict) else item
+                component = str(component).strip()
+                if component and component not in components:
+                    components.append(component)
+            return components
 
         component = str(parsed).strip()
         return [component] if component else []

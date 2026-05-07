@@ -103,6 +103,22 @@ class TestDiagramProcessorSuccess:
             "dynamodb",
         ]
 
+    def test_passes_yolo_labels_from_predictions_metadata(
+        self, processor, mock_analysis, event
+    ):
+        event.metadata["COMPONENTES_YOLO"] = (
+            '{"predictions": ['
+            '{"label": "cloudfront"}, '
+            '{"label": "cloudfront"}, '
+            '{"label": "apigateway"}'
+            "]}"
+        )
+        processor.process(event)
+        assert mock_analysis.analyze.call_args.kwargs["yolo_components"] == [
+            "cloudfront",
+            "apigateway",
+        ]
+
     def test_saves_diagram_twice(self, processor, mock_repo, event):
         processor.process(event)
         assert mock_repo.save.call_count == 2

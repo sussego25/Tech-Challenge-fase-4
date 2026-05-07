@@ -36,7 +36,7 @@ class TestAnalysisServiceReport:
         assert "analise_componentes" in prompt
         assert "riscos_identificados" in prompt
         assert "recomendacoes_melhoria" in prompt
-        assert "Componentes Identificados" in prompt
+        assert "Componentes identificados pelo YOLO" in prompt
 
     def test_prompt_includes_actual_yolo_components_list(self, mock_llm):
         svc = AnalysisService(llm_client=mock_llm)
@@ -44,16 +44,15 @@ class TestAnalysisServiceReport:
         svc.analyze(b"image-bytes", "my-diagram-42", yolo_components=yolo_components)
         prompt = mock_llm.invoke.call_args[0][0]
         assert '["api_gateway", "lambda", "dynamodb"]' in prompt
-        assert "Componentes Identificados" in prompt
+        assert "Componentes identificados pelo YOLO" in prompt
 
     def test_prompt_includes_well_architected_instructions(self, mock_llm):
         svc = AnalysisService(llm_client=mock_llm)
         svc.analyze(b"image-bytes", "my-diagram-42", yolo_components=["s3"])
         prompt = mock_llm.invoke.call_args[0][0]
         assert "AWS Well-Architected Framework" in prompt
-        assert "Proibição de Alucinação" in prompt
-        assert "Otimização de Custos" in prompt
-        assert "Sustentabilidade" in prompt
+        assert "Não invente serviços" in prompt
+        assert '"analise_componentes": ["s3"]' in prompt
 
 
 class TestAnalysisServiceElements:

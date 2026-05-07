@@ -72,15 +72,7 @@ Formato de Saída: Responda estritamente em formato JSON para integração com o
 
 Esquema JSON Esperado (Explicit):
 {{
-  "analise_componentes": [
-    {{
-      "servico": "Nome do Serviço",
-      "caso_uso": "...",
-      "limitacoes": "...",
-      "comparativo": "Comparação com [Serviço X]",
-      "pilares_well_architected": ["Segurança", "Excelência Operacional", "Confiabilidade", "Eficiência de Performance", "Otimização de Custos", "Sustentabilidade"]
-    }}
-  ],
+  "analise_componentes": {yolo_components_text},
   "riscos_identificados": [],
   "recomendacoes_melhoria": []
 }}

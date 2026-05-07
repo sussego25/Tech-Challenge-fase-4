@@ -16,9 +16,9 @@ serviceAccount:
 
 env:
   AWS_REGION: us-east-1
-  SQS_QUEUE_URL: "<SQS_QUEUE_URL>"
-  DYNAMODB_TABLE: "<DYNAMODB_TABLE>"
-  YOLO_SAGEMAKER_ENDPOINT: "<YOLO_SAGEMAKER_ENDPOINT>"
+  SQS_QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/325066546876/tech-challenger-architecture-analysis-queue-prod"
+  DYNAMODB_TABLE: "tech-challenger-diagrams-prod"
+  YOLO_SAGEMAKER_ENDPOINT: "tech-challenger-yolo-prod"
   LLM_PROVIDER: "bedrock"
   SAGEMAKER_ENDPOINT: ""
   BEDROCK_MODEL_ID: "amazon.nova-lite-v1:0"
