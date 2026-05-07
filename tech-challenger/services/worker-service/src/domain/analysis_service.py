@@ -33,7 +33,6 @@ class AnalysisService:
         yolo_components = yolo_components or []
         prompt = self._build_prompt(diagram_id, len(image_data), yolo_components)
         report = self._llm.invoke(prompt)
-        report = self._normalize_report(report, yolo_components)
         elements = self._extract_elements(report)
         for component in yolo_components:
             if component not in elements:
@@ -89,31 +88,3 @@ ReflexÃ£o Final (Reflective): Antes de finalizar o JSON, revise se as recomendaÃ
             if re.search(pattern, normalized) and keyword not in found:
                 found.append(keyword)
         return found
-
-    def _normalize_report(self, report: str, yolo_components: list[str]) -> str:
-        report_json = self._extract_json_report(report)
-        try:
-            parsed = json.loads(report_json)
-        except json.JSONDecodeError:
-            return report
-
-        if not isinstance(parsed, dict):
-            return report
-
-        parsed["analise_componentes"] = yolo_components
-        parsed.setdefault("riscos_identificados", [])
-        parsed.setdefault("recomendacoes_melhoria", [])
-        return json.dumps(parsed, ensure_ascii=False)
-
-    def _extract_json_report(self, report: str) -> str:
-        cleaned = report.strip()
-        if cleaned.startswith("```"):
-            cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
-            cleaned = re.sub(r"\s*```$", "", cleaned)
-
-        start = cleaned.find("{")
-        end = cleaned.rfind("}")
-        if start != -1 and end != -1 and end > start:
-            return cleaned[start : end + 1]
-
-        return cleaned

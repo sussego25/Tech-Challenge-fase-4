@@ -64,16 +64,13 @@ class DiagramProcessor:
                 event.diagram_id,
                 yolo_components,
             )
-            if not yolo_components:
-                raise RuntimeError("YOLO returned no detected components")
-
             logger.info("Starting LLM analysis: diagram_id=%s", event.diagram_id)
             report, elements = self._analysis.analyze(
                 image_data,
                 str(event.diagram_id),
                 yolo_components=yolo_components,
             )
-            diagram.mark_completed(report, elements or yolo_components)
+            diagram.mark_completed(report, yolo_components or elements)
         except Exception as exc:
             error_msg = str(exc)
             logger.exception(
@@ -98,8 +95,13 @@ class DiagramProcessor:
         if self._sns is None or not diagram.analysis_report:
             return
 
-        logger.info("Publishing analysis report to SNS: diagram_id=%s", diagram.diagram_id)
-        self._sns.publish(diagram.analysis_report)
+        logger.info("Publishing analysis result to SNS: diagram_id=%s", diagram.diagram_id)
+        self._sns.publish(
+            {
+                "analysis_report": diagram.analysis_report,
+                "elements_detected": diagram.elements_detected,
+            }
+        )
 
     def _get_yolo_components(
         self,
@@ -109,7 +111,21 @@ class DiagramProcessor:
         for key in ("COMPONENTES_YOLO", "components_yolo", "yolo_components"):
             raw_components = event.metadata.get(key)
             if raw_components:
-                return self._parse_yolo_components(raw_components)
+                components = self._parse_yolo_components(raw_components)
+                if components:
+                    logger.info(
+                        "Using YOLO components from metadata: diagram_id=%s key=%s components=%s",
+                        event.diagram_id,
+                        key,
+                        components,
+                    )
+                    return components
+
+                logger.info(
+                    "Ignoring empty YOLO components metadata: diagram_id=%s key=%s",
+                    event.diagram_id,
+                    key,
+                )
 
         if self._yolo is None:
             return []

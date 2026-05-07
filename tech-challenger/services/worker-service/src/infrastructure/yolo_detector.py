@@ -1,11 +1,14 @@
 import base64
 import json
+import logging
 import os
 from typing import Any
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
+
+logger = logging.getLogger(__name__)
 
 
 class YoloDetector:
@@ -56,6 +59,8 @@ class YoloDetector:
                 label = self._extract_label(prediction)
                 if label and label not in components:
                     components.append(label)
+        else:
+            logger.warning("YOLO response has no predictions list: response=%s", parsed)
 
         return components
 
