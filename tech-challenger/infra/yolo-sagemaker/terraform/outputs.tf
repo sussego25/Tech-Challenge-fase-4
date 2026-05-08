@@ -12,3 +12,6 @@ output "sagemaker_execution_role_arn" {
   description = "ARN da role de execucao do SageMaker YOLO"
   value       = aws_iam_role.yolo_execution_role.arn
 }
+
+
+
