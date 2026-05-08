@@ -5,6 +5,19 @@ from libs.llm import LLMClient
 
 _ELEMENT_KEYWORDS = [
     "api gateway",
+    "apigateway",  # Adicionado
+    "api",
+    "lambda",
+    "sqs",
+    "dynamodb",
+    "s3",
+    "eks",
+    "bedrock",  # Adicionado
+    "privatelink",  # Adicionado
+    "elb",  # Adicionado
+    "database",
+    "storage",
+    "api gateway",
     "api_gateway",
     "api",
     "lambda",
