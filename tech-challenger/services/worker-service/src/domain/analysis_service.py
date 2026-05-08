@@ -24,20 +24,23 @@ class AnalysisService:
     def __init__(self, llm_client: LLMClient) -> None:
         self._llm = llm_client
 
-    def analyze(
-        self,
-        image_data: bytes,
-        diagram_id: str,
-        yolo_components: list[str] | None = None,
-    ) -> tuple[str, list[str]]:
+    def analyze(self, image_data, diagram_id, yolo_components):
         yolo_components = yolo_components or []
         prompt = self._build_prompt(diagram_id, len(image_data), yolo_components)
         report = self._llm.invoke(prompt)
-        elements = self._extract_elements(report)
+        
+        # LIMPEZA CRÍTICA: Remove as crases que o Bedrock coloca
+        report_clean = report.replace("```json", "").replace("```", "").strip()
+        
+        # Extrai os elementos do texto limpo
+        elements = self._extract_elements(report_clean)
+        
+        # GARANTIA: Se o YOLO achou algo, TEM que estar na lista final
         for component in yolo_components:
             if component not in elements:
                 elements.append(component)
-        return report, elements
+                
+        return report_clean, elements
 
     def _build_prompt(
         self,
@@ -45,8 +48,9 @@ class AnalysisService:
         image_size: int,
         yolo_components: list[str] | None = None,
     ) -> str:
+        # Em vez de json.dumps, crie uma lista legível por humanos
         yolo_components = yolo_components or []
-        yolo_components_text = json.dumps(yolo_components, ensure_ascii=False)
+        yolo_components_text = ", ".join(yolo_components) if yolo_components else "Nenhum componente detectado"
 
         return f"""Persona (Concise/Logical): Você é um Arquiteto de Software Especialista em Cloud, certificado como AWS Solutions Architect Professional. Sua tarefa é realizar uma análise técnica de uma lista de componentes extraídos de um diagrama de arquitetura para a empresa FIAP Secure Systems.
 
